@@ -63,7 +63,7 @@ The platform features an aesthetic, clean, and accessible UI crafted with custom
 
 - **Frontend**: React (Vite), Tailwind CSS, React Router DOM, Lucide Icons, Axios.
 - **Backend**: Node.js, Express REST API, JSON Web Tokens (JWT), Bcrypt.js, Multer (file uploads).
-- **Database**: MongoDB with Mongoose ODM (or MongoDB Memory Server / Local MongoDB).
+- **Database**: PostgreSQL (`pg` pool connection).
 - **Mailing Service**: Nodemailer (SMTP configurable with development console fallback).
 
 ---
