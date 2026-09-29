@@ -89,7 +89,24 @@ export default function LoginPage() {
         setCanResend(false);
       }
     } catch (err) {
-      showError(err.response?.data?.message || 'Failed to send verification code. Please check your details.');
+      console.error('Send OTP Error:', err);
+      const serverMessage = err.response?.data?.message;
+
+      if (serverMessage && serverMessage.includes('already exists')) {
+        showError(serverMessage);
+        // Automatically switch to Passwordless Login tab for convenience
+        setMode('login');
+      } else if (serverMessage && serverMessage.includes('No registered user found')) {
+        showError(serverMessage);
+        // Automatically switch to New Registration tab
+        setMode('signup');
+      } else if (err.response?.status === 500) {
+        showError(serverMessage || 'Server or database error. Please ensure the database is connected.');
+      } else if (err.message === 'Network Error' || !err.response) {
+        showError('Unable to connect to the backend server. Please check your internet or server deployment status.');
+      } else {
+        showError(serverMessage || err.message || 'Failed to send verification code. Please check your details.');
+      }
     } finally {
       setLoading(false);
     }
