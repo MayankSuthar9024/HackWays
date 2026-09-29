@@ -146,6 +146,18 @@ const initDB = async () => {
 
     client.release();
     console.log('[PostgreSQL Ready]: Schema tables verified and ready.');
+
+    // Auto-seed if database is fresh (0 admins)
+    try {
+      const adminCountRes = await pool.query('SELECT COUNT(*) FROM admins');
+      if (parseInt(adminCountRes.rows[0].count, 10) === 0) {
+        console.log('[PostgreSQL Auto-Seed]: Fresh database detected. Auto-seeding initial admin and demo events...');
+        const { seedData } = require('../scripts/seed');
+        await seedData();
+      }
+    } catch (seedErr) {
+      console.warn('[PostgreSQL Auto-Seed Warning]:', seedErr.message);
+    }
   } catch (err) {
     console.error('[PostgreSQL Connection Error]:', err.message);
   }

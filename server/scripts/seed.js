@@ -215,11 +215,21 @@ const seedData = async () => {
     console.log(`Admin Password: ${adminPassword}`);
     console.log('=============================================\n');
 
-    process.exit(0);
+    if (require.main === module) {
+      process.exit(0);
+    }
+    return { success: true, adminEmail, adminPassword };
   } catch (err) {
     console.error('PostgreSQL Seed Error:', err);
-    process.exit(1);
+    if (require.main === module) {
+      process.exit(1);
+    }
+    throw err;
   }
 };
 
-seedData();
+if (require.main === module) {
+  seedData();
+}
+
+module.exports = { seedData };

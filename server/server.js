@@ -40,6 +40,30 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date() });
 });
 
+// Database seed endpoint for environments without terminal/shell access (e.g., Render Free tier)
+app.get('/api/seed', async (req, res) => {
+  const secret = req.query.secret;
+  if (secret !== (process.env.SEED_SECRET || 'Admin@Org2026!')) {
+    return res.status(403).json({
+      success: false,
+      message: 'Unauthorized. Please provide ?secret=Admin@Org2026!',
+    });
+  }
+
+  try {
+    const { seedData } = require('./scripts/seed');
+    const result = await seedData();
+    res.json({
+      success: true,
+      message: 'PostgreSQL Database successfully seeded with admin and sample events!',
+      admin: result.adminEmail,
+      note: 'You can now log in at /admin/login',
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Serve frontend build in production mode
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, '../client/dist');
