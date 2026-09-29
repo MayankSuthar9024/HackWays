@@ -1,17 +1,26 @@
 const { Pool } = require('pg');
 
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '7665',
-  host: process.env.DB_HOST || '127.0.0.1',
-  port: Number(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME || 'org_portal',
-});
+const poolConfig = process.env.DATABASE_URL
+  ? {
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1')
+        ? false
+        : { rejectUnauthorized: false },
+    }
+  : {
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || '7665',
+      host: process.env.DB_HOST || '127.0.0.1',
+      port: Number(process.env.DB_PORT) || 5432,
+      database: process.env.DB_NAME || 'org_portal',
+    };
+
+const pool = new Pool(poolConfig);
 
 const initDB = async () => {
   try {
     const client = await pool.connect();
-    console.log(`[PostgreSQL Connected]: connected to database "${process.env.DB_NAME || 'org_portal'}" on port 5432`);
+    console.log(`[PostgreSQL Connected]: connected successfully via ${process.env.DATABASE_URL ? 'DATABASE_URL' : 'local credentials'}`);
 
     // Create Tables
     await client.query(`
