@@ -43,7 +43,7 @@ export default function EventsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-accent/15 pb-6">
         <div>
           <div className="text-xs font-bold uppercase tracking-wider text-accent mb-1">Explore & Participate</div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-dark tracking-tight">Organization Events</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-dark tracking-tight">Hackways Events</h1>
           <p className="text-sm text-dark-muted mt-1">
             Discover upcoming hackathons, innovation sprints, and tech summits.
           </p>

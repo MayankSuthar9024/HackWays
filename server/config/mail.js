@@ -30,11 +30,11 @@ const createTransporter = () => {
 
 const sendOTPEmail = async (email, otp, name = 'User') => {
   const transporter = createTransporter();
-  const subject = `Your Verification Code: ${otp} - Organization Portal`;
+  const subject = `Your Verification Code: ${otp} - Hackways`;
   const html = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #F9D5BA; border-radius: 12px; background-color: #F8EBE1;">
       <div style="background-color: #1F4D3A; color: #ffffff; padding: 16px; border-radius: 8px; text-align: center;">
-        <h2 style="margin: 0; font-size: 20px;">Organization Portal</h2>
+        <h2 style="margin: 0; font-size: 20px;">Hackways</h2>
       </div>
       <div style="padding: 24px 8px; color: #221610;">
         <p style="font-size: 16px;">Hello <strong>${name}</strong>,</p>
@@ -47,7 +47,7 @@ const sendOTPEmail = async (email, otp, name = 'User') => {
         <p style="font-size: 13px; color: #653220;">If you did not request this verification code, please ignore this email.</p>
       </div>
       <div style="border-top: 1px solid #D9C4B5; padding-top: 12px; text-align: center; font-size: 12px; color: #7A6559;">
-        &copy; ${new Date().getFullYear()} Organization. All rights reserved.
+        &copy; ${new Date().getFullYear()} Hackways. All rights reserved.
       </div>
     </div>
   `;
@@ -55,7 +55,7 @@ const sendOTPEmail = async (email, otp, name = 'User') => {
   if (transporter) {
     try {
       await transporter.sendMail({
-        from: process.env.SMTP_FROM || '"Organization Team" <no-reply@organization.org>',
+        from: process.env.SMTP_FROM || '"Hackways Team" <no-reply@hackways.org>',
         to: email,
         subject,
         html,

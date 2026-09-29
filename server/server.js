@@ -89,7 +89,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 Organization Portal API Server running on port ${PORT}`);
+  console.log(`🚀 Hackways API Server running on port ${PORT}`);
   console.log(`🌐 Base URL: http://localhost:${PORT}/api`);
   console.log(`📧 SMTP Service: ${process.env.SMTP_USER ? 'Configured (' + process.env.SMTP_USER + ')' : 'Dev Console Mode'}`);
 });

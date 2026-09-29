@@ -1,6 +1,6 @@
-# Organization Event & Innovation Platform
+# Hackways — Event & Innovation Platform
 
-A full-stack web application designed for organization event management, participant registrations, timed problem statement releases, idea proposals, and prototype submissions with an admin control dashboard.
+A full-stack web application designed for Hackways event management, participant registrations, timed problem statement releases, idea proposals, and prototype submissions with an admin control dashboard.
 
 ---
 

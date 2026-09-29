@@ -28,7 +28,7 @@ export default function Navbar() {
             </div>
             <div>
               <span className="font-bold text-lg tracking-tight block leading-tight text-white">
-                ORGANIZATION
+                HACKWAYS
               </span>
               <span className="text-[11px] text-secondary tracking-wider uppercase block font-medium">
                 Innovation & Events Hub

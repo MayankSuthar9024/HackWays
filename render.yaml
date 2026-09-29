@@ -19,7 +19,7 @@ services:
       - key: SMTP_PASS
         sync: false
       - key: SMTP_FROM
-        value: "Organization Portal <tmgmayankff@gmail.com>"
+        value: "Hackways <tmgmayankff@gmail.com>"
 
 databases:
   - name: org-portal-db

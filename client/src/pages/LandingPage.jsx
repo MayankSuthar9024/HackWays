@@ -144,7 +144,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg sm:text-xl text-white/80 leading-relaxed font-normal max-w-2xl">
-              Welcome to the official events and competition platform for our organization. Discover curated problem statements, submit cutting-edge prototypes, and collaborate with visionary peers.
+              Welcome to Hackways, the official events and competition platform for innovative minds. Discover curated problem statements, submit cutting-edge prototypes, and collaborate with visionary peers.
             </p>
 
             <div className="pt-4 flex flex-wrap items-center gap-4">
@@ -246,13 +246,13 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-secondary/60 text-accent text-xs font-bold uppercase tracking-wider">
-                About Our Organization
+                About Hackways
               </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-dark tracking-tight">
                 Fostering an ecosystem of purposeful engineering & design
               </h2>
               <p className="text-dark-muted text-base leading-relaxed">
-                Our organization bridges real-world community challenges with passionate problem solvers. Through our hackathons, ideathons, and innovation incubators, we provide a structured arena for talent to prototype impactful solutions.
+                Hackways bridges real-world community challenges with passionate problem solvers. Through our hackathons, ideathons, and innovation incubators, we provide a structured arena for talent to prototype impactful solutions.
               </p>
               <div className="space-y-3 pt-2">
                 <div className="flex items-start gap-3">

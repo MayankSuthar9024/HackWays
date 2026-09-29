@@ -72,7 +72,7 @@ export default function AdminLayout() {
                 <Sparkles className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <span className="font-bold text-base block leading-tight text-white">ORGANIZATION</span>
+                <span className="font-bold text-base block leading-tight text-white">HACKWAYS</span>
                 <span className="text-[10px] text-secondary tracking-wider uppercase font-semibold">Admin Panel</span>
               </div>
             </Link>
