@@ -1,17 +1,15 @@
 {
   "name": "organization-platform",
   "version": "1.0.0",
-  "description": "Full-stack organization event and hackathon submission portal",
+  "description": "HackWays event and hackathon submission portal powered by Firebase Realtime Database",
   "scripts": {
-    "install:server": "npm --prefix server install",
-    "install:client": "npm --prefix client install",
-    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
-    "build": "npm --prefix client install && npm --prefix client run build && npm --prefix server install",
-    "start": "node server/server.js",
-    "server": "npm --prefix server run dev",
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "preview": "npm --prefix client run preview",
+    "start": "npm --prefix client run preview",
     "client": "npm --prefix client run dev",
-    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"bgBlue.bold,bgGreen.bold\" \"npm run server\" \"npm run client\"",
-    "seed": "npm --prefix server run seed"
+    "install:client": "npm --prefix client install",
+    "install:all": "npm install && npm --prefix client install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

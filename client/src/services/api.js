@@ -1,40 +1,229 @@
-import axios from 'axios';
+import {
+  authService,
+  eventService,
+  psService,
+  submissionService,
+  adminService,
+} from './firebaseService';
 
-const resolveBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (!envUrl || envUrl.trim() === '') {
-    return '/api';
-  }
-  const clean = envUrl.trim().replace(/\/+$/, '');
-  return clean.endsWith('/api') ? clean : `${clean}/api`;
+// Parse path and query parameters
+const parseUrl = (rawUrl) => {
+  let clean = rawUrl.replace(/^\/?api\/?/, '/');
+  if (!clean.startsWith('/')) clean = '/' + clean;
+
+  const [path, search] = clean.split('?');
+  const params = new URLSearchParams(search || '');
+  return { path, params };
 };
 
-const api = axios.create({
-  baseURL: resolveBaseUrl(),
-});
+const api = {
+  interceptors: {
+    request: { use: () => {} },
+    response: { use: () => {} },
+  },
 
-// Attach JWT token to requests if present
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('org_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+  async get(rawUrl) {
+    const { path, params } = parseUrl(rawUrl);
 
-// Handle unauthorized responses automatically
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // Clear token on authentication expiry
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/admin/login') {
-        localStorage.removeItem('org_token');
-        localStorage.removeItem('org_user');
-      }
+    // Auth
+    if (path === '/auth/me') {
+      const data = await authService.getMe();
+      return { data };
     }
-    return Promise.reject(error);
-  }
-);
+
+    // Admin Dashboard
+    if (path === '/admin/dashboard') {
+      const data = await adminService.getDashboardStats();
+      return { data };
+    }
+
+    // Admin Users
+    if (path === '/admin/users') {
+      const data = await adminService.getRegisteredUsers({
+        eventId: params.get('eventId'),
+        search: params.get('search'),
+      });
+      return { data };
+    }
+
+    // Admin Submissions
+    if (path === '/admin/submissions') {
+      const data = await adminService.getSubmissions({
+        eventId: params.get('eventId'),
+        type: params.get('type') || 'idea',
+      });
+      return { data };
+    }
+
+    // Admin Admins
+    if (path === '/admin/admins') {
+      const data = await adminService.getAdmins();
+      return { data };
+    }
+
+    // My Events
+    if (path === '/events/user/my-events') {
+      const data = await eventService.getMyEvents();
+      return { data };
+    }
+
+    // Event Problem Statements: /events/:id/problem-statements
+    const psMatch = path.match(/^\/events\/([^/]+)\/problem-statements$/);
+    if (psMatch) {
+      const data = await psService.getEventProblemStatements(psMatch[1]);
+      return { data };
+    }
+
+    // Event Submissions Mine: /events/:id/submissions/mine
+    const mineMatch = path.match(/^\/events\/([^/]+)\/submissions\/mine$/);
+    if (mineMatch) {
+      const data = await submissionService.getMySubmissions(mineMatch[1]);
+      return { data };
+    }
+
+    // Single Event Detail: /events/:id
+    const singleEventMatch = path.match(/^\/events\/([^/]+)$/);
+    if (singleEventMatch) {
+      const data = await eventService.getEventById(singleEventMatch[1]);
+      return { data };
+    }
+
+    // All Events: /events
+    if (path === '/events') {
+      const data = await eventService.getAllEvents({
+        status: params.get('status'),
+        search: params.get('search'),
+      });
+      return { data };
+    }
+
+    console.warn('[Firebase API]: Unhandled GET route:', path);
+    return { data: { success: false, message: `Route ${path} not found` } };
+  },
+
+  async post(rawUrl, body) {
+    const { path } = parseUrl(rawUrl);
+
+    // Auth
+    if (path === '/auth/send-otp') {
+      const data = await authService.sendOTP(body);
+      return { data };
+    }
+    if (path === '/auth/verify-otp') {
+      const data = await authService.verifyOTP(body);
+      return { data };
+    }
+    if (path === '/auth/admin-login') {
+      const data = await authService.adminLogin(body);
+      return { data };
+    }
+
+    // Admin Create Admin
+    if (path === '/admin/admins') {
+      const data = await adminService.createAdmin(body);
+      return { data };
+    }
+
+    // Event Registration: /events/:id/register
+    const regMatch = path.match(/^\/events\/([^/]+)\/register$/);
+    if (regMatch) {
+      const data = await eventService.registerForEvent(regMatch[1], body);
+      return { data };
+    }
+
+    // Idea Submission: /events/:id/submissions/idea
+    const ideaMatch = path.match(/^\/events\/([^/]+)\/submissions\/idea$/);
+    if (ideaMatch) {
+      const data = await submissionService.submitIdea(ideaMatch[1], body);
+      return { data };
+    }
+
+    // Prototype Submission: /events/:id/submissions/prototype
+    const protoMatch = path.match(/^\/events\/([^/]+)\/submissions\/prototype$/);
+    if (protoMatch) {
+      const data = await submissionService.submitPrototype(protoMatch[1], body);
+      return { data };
+    }
+
+    // Event Create Problem Statement: /events/:id/problem-statements
+    const createPSMatch = path.match(/^\/events\/([^/]+)\/problem-statements$/);
+    if (createPSMatch) {
+      const data = await psService.createProblemStatement(createPSMatch[1], body);
+      return { data };
+    }
+
+    // Create Event: /events
+    if (path === '/events') {
+      const data = await eventService.createEvent(body);
+      return { data };
+    }
+
+    console.warn('[Firebase API]: Unhandled POST route:', path);
+    return { data: { success: false, message: `Route ${path} not found` } };
+  },
+
+  async put(rawUrl, body) {
+    const { path } = parseUrl(rawUrl);
+
+    // Auth Profile
+    if (path === '/auth/profile') {
+      const data = await authService.updateProfile(body);
+      return { data };
+    }
+
+    // Event Schedule Controls: /events/:id/schedule
+    const schedMatch = path.match(/^\/events\/([^/]+)\/schedule$/);
+    if (schedMatch) {
+      const data = await eventService.updateSchedule(schedMatch[1], body);
+      return { data };
+    }
+
+    // Admin Submission Review: /admin/submissions/:type/:id/review
+    const reviewMatch = path.match(/^\/admin\/submissions\/([^/]+)\/([^/]+)\/review$/);
+    if (reviewMatch) {
+      const [, type, id] = reviewMatch;
+      const data = await adminService.updateSubmissionStatus(type, id, body);
+      return { data };
+    }
+
+    // Update Problem Statement: /problem-statements/:id
+    const updatePSMatch = path.match(/^\/problem-statements\/([^/]+)$/);
+    if (updatePSMatch) {
+      const data = await psService.updateProblemStatement(updatePSMatch[1], body);
+      return { data };
+    }
+
+    // Update Event: /events/:id
+    const updateEventMatch = path.match(/^\/events\/([^/]+)$/);
+    if (updateEventMatch) {
+      const data = await eventService.updateEvent(updateEventMatch[1], body);
+      return { data };
+    }
+
+    console.warn('[Firebase API]: Unhandled PUT route:', path);
+    return { data: { success: false, message: `Route ${path} not found` } };
+  },
+
+  async delete(rawUrl) {
+    const { path } = parseUrl(rawUrl);
+
+    // Delete Problem Statement: /problem-statements/:id
+    const deletePSMatch = path.match(/^\/problem-statements\/([^/]+)$/);
+    if (deletePSMatch) {
+      const data = await psService.deleteProblemStatement(deletePSMatch[1]);
+      return { data };
+    }
+
+    // Delete Event: /events/:id
+    const deleteEventMatch = path.match(/^\/events\/([^/]+)$/);
+    if (deleteEventMatch) {
+      const data = await eventService.deleteEvent(deleteEventMatch[1]);
+      return { data };
+    }
+
+    console.warn('[Firebase API]: Unhandled DELETE route:', path);
+    return { data: { success: false, message: `Route ${path} not found` } };
+  },
+};
 
 export default api;
