@@ -68,6 +68,16 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
+  // Complete profile after Google sign-in
+  const completeProfile = async (payload) => {
+    const res = await api.post('/auth/complete-profile', payload);
+    if (res.data.success) {
+      setUser(res.data.user);
+      localStorage.setItem('org_user', JSON.stringify(res.data.user));
+    }
+    return res.data;
+  };
+
   // Admin login with email & password
   const adminLogin = async (credentials) => {
     const res = await api.post('/auth/admin-login', credentials);
@@ -110,6 +120,7 @@ export const AuthProvider = ({ children }) => {
         sendOTP,
         verifyOTP,
         loginWithGoogle,
+        completeProfile,
         adminLogin,
         updateProfile,
         logout,

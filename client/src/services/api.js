@@ -117,6 +117,10 @@ const api = {
       const data = await authService.loginWithGoogle();
       return { data };
     }
+    if (path === '/auth/complete-profile') {
+      const data = await authService.completeProfile(body);
+      return { data };
+    }
     if (path === '/auth/admin-login') {
       const data = await authService.adminLogin(body);
       return { data };

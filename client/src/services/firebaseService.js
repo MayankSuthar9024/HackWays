@@ -515,12 +515,47 @@ export const authService = {
     }
 
     const token = `token_google_${user.id}_${Date.now()}`;
+    const isProfileComplete = Boolean(user.phone && user.college);
     return {
       success: true,
       message: 'Signed in with Google successfully!',
       token,
       user,
       role: 'user',
+      isProfileComplete,
+    };
+  },
+
+  async completeProfile({ name, phone, college }) {
+    const storedUserStr = localStorage.getItem('org_user');
+    if (!storedUserStr) {
+      const err = new Error('You must be logged in to update your profile.');
+      err.response = { status: 401, data: { message: err.message } };
+      throw err;
+    }
+
+    const storedUser = JSON.parse(storedUserStr);
+    const userId = storedUser.id || storedUser._id;
+
+    const updatedData = {
+      name: name?.trim() || storedUser.name,
+      phone: phone?.trim() || '',
+      college: college?.trim() || '',
+      isProfileComplete: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await updatePath(`users/${userId}`, updatedData);
+    const updatedUser = {
+      ...storedUser,
+      ...updatedData,
+    };
+
+    localStorage.setItem('org_user', JSON.stringify(updatedUser));
+    return {
+      success: true,
+      message: 'Profile completed successfully!',
+      user: updatedUser,
     };
   },
 
