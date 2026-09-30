@@ -10,6 +10,13 @@ import {
   push,
   onValue,
 } from 'firebase/database';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDxs8z0LdfzktRNysdFZhHpGYVLo-NcQuU',
@@ -30,15 +37,36 @@ export const isFirebaseConfigured = Boolean(
 
 let app = null;
 let db = null;
+let auth = null;
+let googleProvider = null;
 
 if (isFirebaseConfigured) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     db = getDatabase(app);
-    console.log('[Firebase]: Connected to Firebase Realtime Database at', firebaseConfig.databaseURL);
+    auth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
+    console.log('[Firebase]: Connected to Realtime Database and Auth.');
   } catch (err) {
     console.error('[Firebase Error]: Failed to initialize Firebase:', err);
   }
 }
 
-export { app, db, ref, set, get, child, update, remove, push, onValue };
+export {
+  app,
+  db,
+  auth,
+  googleProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  ref,
+  set,
+  get,
+  child,
+  update,
+  remove,
+  push,
+  onValue,
+};

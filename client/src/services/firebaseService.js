@@ -1,5 +1,9 @@
 import {
   db,
+  auth,
+  googleProvider,
+  signInWithPopup,
+  signOut,
   isFirebaseConfigured,
   ref,
   set,
@@ -468,6 +472,66 @@ export const authService = {
     await updatePath(path, data);
     const updated = await readPath(path);
     return { success: true, user: updated };
+  },
+
+  async loginWithGoogle() {
+    await ensureDatabaseSeeded();
+    if (!auth || !googleProvider) {
+      throw new Error('Firebase Auth is not initialized. Please ensure your Firebase credentials in client/.env are valid.');
+    }
+
+    const result = await signInWithPopup(auth, googleProvider);
+    const gUser = result.user;
+    const cleanEmail = gUser.email?.toLowerCase().trim() || '';
+    const userId = gUser.uid;
+
+    const usersObj = (await readPath('users')) || {};
+    let existingUser = Object.values(usersObj).find(
+      (u) => u.email?.toLowerCase() === cleanEmail || u.id === userId || u._id === userId
+    );
+
+    let user;
+    if (existingUser) {
+      user = {
+        ...existingUser,
+        name: existingUser.name || gUser.displayName || 'Participant',
+        photoURL: gUser.photoURL || existingUser.photoURL || '',
+      };
+      await updatePath(`users/${existingUser.id || existingUser._id}`, user);
+    } else {
+      user = {
+        id: userId,
+        _id: userId,
+        name: gUser.displayName || 'Participant',
+        email: cleanEmail,
+        phone: gUser.phoneNumber || '',
+        college: '',
+        photoURL: gUser.photoURL || '',
+        role: 'user',
+        isVerified: true,
+        createdAt: new Date().toISOString(),
+      };
+      await writePath(`users/${userId}`, user);
+    }
+
+    const token = `token_google_${user.id}_${Date.now()}`;
+    return {
+      success: true,
+      message: 'Signed in with Google successfully!',
+      token,
+      user,
+      role: 'user',
+    };
+  },
+
+  async logoutFirebase() {
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.warn('Firebase signOut notice:', err);
+      }
+    }
   },
 };
 

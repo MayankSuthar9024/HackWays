@@ -82,7 +82,11 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg text-xs font-medium">
-                  <User className="w-3.5 h-3.5 text-secondary" />
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.name} className="w-4 h-4 rounded-full object-cover" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 text-secondary" />
+                  )}
                   <span className="text-white max-w-[120px] truncate">{user.name}</span>
                   {isAdmin && (
                     <span className="bg-secondary text-primary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">

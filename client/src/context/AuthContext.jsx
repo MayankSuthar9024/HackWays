@@ -56,6 +56,18 @@ export const AuthProvider = ({ children }) => {
     return res.data;
   };
 
+  // Google Sign-In
+  const loginWithGoogle = async () => {
+    const res = await api.post('/auth/google');
+    if (res.data.success) {
+      localStorage.setItem('org_token', res.data.token);
+      localStorage.setItem('org_user', JSON.stringify(res.data.user));
+      setUser(res.data.user);
+      setRole('user');
+    }
+    return res.data;
+  };
+
   // Admin login with email & password
   const adminLogin = async (credentials) => {
     const res = await api.post('/auth/admin-login', credentials);
@@ -97,6 +109,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         sendOTP,
         verifyOTP,
+        loginWithGoogle,
         adminLogin,
         updateProfile,
         logout,

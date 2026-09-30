@@ -113,6 +113,10 @@ const api = {
       const data = await authService.verifyOTP(body);
       return { data };
     }
+    if (path === '/auth/google') {
+      const data = await authService.loginWithGoogle();
+      return { data };
+    }
     if (path === '/auth/admin-login') {
       const data = await authService.adminLogin(body);
       return { data };
