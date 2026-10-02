@@ -51,6 +51,18 @@ const setLocalStore = (data) => {
   }
 };
 
+// Three Official Super Administrators for HackWays & CIT
+export const SUPER_ADMIN_EMAILS = [
+  'discountbuddyshubham@gmail.com',
+  'sureshcitabu@gmail.com',
+  'tmgmayankff@gmail.com',
+];
+
+export const isSuperAdminEmail = (email) => {
+  if (!email) return false;
+  return SUPER_ADMIN_EMAILS.includes(String(email).trim().toLowerCase());
+};
+
 // Initial Seed Data
 const DEFAULT_INITIAL_DATA = () => {
   const now = Date.now();
@@ -66,6 +78,33 @@ const DEFAULT_INITIAL_DATA = () => {
         password: 'Admin@Org2026!',
         role: 'superadmin',
         createdBy: 'system-seed',
+        createdAt: new Date().toISOString(),
+      },
+      admin_shubham: {
+        id: 'admin_shubham',
+        _id: 'admin_shubham',
+        name: 'Shubham (Super Admin)',
+        email: 'discountbuddyshubham@gmail.com',
+        role: 'superadmin',
+        createdBy: 'system-rule',
+        createdAt: new Date().toISOString(),
+      },
+      admin_suresh: {
+        id: 'admin_suresh',
+        _id: 'admin_suresh',
+        name: 'Suresh CIT (Super Admin)',
+        email: 'sureshcitabu@gmail.com',
+        role: 'superadmin',
+        createdBy: 'system-rule',
+        createdAt: new Date().toISOString(),
+      },
+      admin_mayank: {
+        id: 'admin_mayank',
+        _id: 'admin_mayank',
+        name: 'Mayank (Super Admin)',
+        email: 'tmgmayankff@gmail.com',
+        role: 'superadmin',
+        createdBy: 'system-rule',
         createdAt: new Date().toISOString(),
       },
     },
@@ -260,6 +299,20 @@ export const ensureLocalStoreInitialized = () => {
     setLocalStore(seed);
     return seed;
   }
+
+  // Ensure the 3 super admins exist in local store
+  if (!existing.admins) existing.admins = {};
+  const seedAdmins = DEFAULT_INITIAL_DATA().admins;
+  let updated = false;
+  for (const [key, adminData] of Object.entries(seedAdmins)) {
+    if (!existing.admins[key]) {
+      existing.admins[key] = adminData;
+      updated = true;
+    }
+  }
+  if (updated) {
+    setLocalStore(existing);
+  }
   return existing;
 };
 ensureLocalStoreInitialized();
@@ -322,7 +375,7 @@ const readPath = async (path) => {
 };
 
 const writePath = async (path, val) => {
-  // 1. Immediately persist to local store for 0ms UI latency
+  // 1. Immediately persist to local store for backup/responsiveness
   const store = getLocalStore() || ensureLocalStoreInitialized();
   const segments = path.split('/').filter(Boolean);
   let cur = store;
@@ -341,21 +394,24 @@ const writePath = async (path, val) => {
   }
   setLocalStore(store);
 
-  // 2. Persist to Firebase Realtime Database in cloud
+  // 2. Persist directly to Firebase Realtime Database in cloud
   if (isFirebaseConfigured && db) {
     try {
       const dbRef = ref(db, path);
       if (val === null) {
-        await timeoutPromise(remove(dbRef), 4000);
+        await timeoutPromise(remove(dbRef), 5000);
       } else {
-        await timeoutPromise(set(dbRef, val), 4000);
+        await timeoutPromise(set(dbRef, val), 5000);
       }
-      console.log(`[Firebase RTDB Cloud]: Successfully saved to "${path}".`);
+      console.log(`✅ [Firebase RTDB Cloud]: Successfully saved to cloud path "${path}".`);
     } catch (err) {
-      console.error(`[Firebase RTDB Cloud Save Error at "${path}"]:`, err.message);
+      console.error(`🚨 [Firebase RTDB Cloud Error at "${path}"]:`, err.message);
       if (err.message && err.message.includes('Permission denied')) {
-        console.error('[Action Required]: In Firebase Console -> Realtime Database -> Rules, ensure ".read": true and ".write": true to enable cross-device synchronization.');
+        const errorMsg = 'Firebase Cloud Rules Locked: In Firebase Console -> Realtime Database -> Rules tab, change rules to: { "rules": { ".read": true, ".write": true } } and click Publish.';
+        console.error('ACTION REQUIRED:', errorMsg);
+        throw new Error(errorMsg);
       }
+      throw err;
     }
   }
 };
@@ -368,7 +424,7 @@ const updatePath = async (path, val) => {
   if (isFirebaseConfigured && db) {
     try {
       const dbRef = ref(db, path);
-      await timeoutPromise(update(dbRef, val), 4000);
+      await timeoutPromise(update(dbRef, val), 5000);
     } catch (err) {
       console.warn(`[Firebase RTDB Cloud update notice at "${path}"]:`, err.message);
     }
@@ -378,9 +434,8 @@ const updatePath = async (path, val) => {
 // Seed initial database structure if empty
 let isSeeded = false;
 export const ensureDatabaseSeeded = async () => {
-  if (isSeeded) return;
   ensureLocalStoreInitialized();
-  isSeeded = true;
+  if (isSeeded) return;
 
   // Check if cloud Firebase needs initial seed
   if (isFirebaseConfigured && db) {
@@ -389,14 +444,33 @@ export const ensureDatabaseSeeded = async () => {
       const snapshot = await timeoutPromise(get(child(dbRef, 'events/event_1')), 3000);
       if (!snapshot || !snapshot.exists()) {
         const initialSeed = DEFAULT_INITIAL_DATA();
-        await timeoutPromise(update(ref(db), initialSeed), 4000);
-        console.log('[Firebase RTDB]: Seeded default events and problem statements to Firebase Cloud.');
+        await timeoutPromise(update(ref(db), initialSeed), 5000);
+        console.log('✅ [Firebase RTDB]: Seeded default events and problem statements to Firebase Cloud.');
+        isSeeded = true;
+      } else {
+        isSeeded = true;
       }
     } catch (err) {
       console.info('[Firebase RTDB Seed Notice]:', err.message);
     }
   }
 };
+
+// Push all local store data directly to Firebase Realtime Database
+export const syncCloudDatabase = async () => {
+  if (!isFirebaseConfigured || !db) return false;
+  try {
+    const store = getLocalStore() || DEFAULT_INITIAL_DATA();
+    await timeoutPromise(update(ref(db), store), 6000);
+    console.log('🚀 [Firebase Cloud Sync]: All data successfully uploaded to Firebase Cloud Realtime Database!');
+    return true;
+  } catch (err) {
+    console.error('❌ [Firebase Cloud Sync Error]:', err.message);
+    return false;
+  }
+};
+// Kick off cloud synchronization
+syncCloudDatabase();
 
 
 // ----------------------------------------------------
@@ -476,29 +550,46 @@ export const authService = {
     const usersObj = (await readPath('users')) || {};
     let user = Object.values(usersObj).find((u) => u.email?.toLowerCase() === cleanEmail);
 
+    const isSuperAdmin = isSuperAdminEmail(cleanEmail);
+
     if (!user) {
       const newId = `user_${Date.now()}`;
       user = {
         id: newId,
         _id: newId,
-        name: otpRecord.tempUserData?.name || 'Hackways Participant',
+        name: otpRecord.tempUserData?.name || (isSuperAdmin ? 'Super Administrator' : 'Hackways Participant'),
         email: cleanEmail,
         phone: otpRecord.tempUserData?.phone || '',
-        college: otpRecord.tempUserData?.college || '',
-        role: 'user',
+        college: otpRecord.tempUserData?.college || (isSuperAdmin ? 'CIT Abu Road' : ''),
+        role: isSuperAdmin ? 'superadmin' : 'user',
         isVerified: true,
         createdAt: new Date().toISOString(),
       };
       await writePath(`users/${newId}`, user);
+    } else if (isSuperAdmin && user.role !== 'superadmin') {
+      user.role = 'superadmin';
+      await updatePath(`users/${user.id || user._id}`, { role: 'superadmin' });
+    }
+
+    if (isSuperAdmin) {
+      await writePath(`admins/${user.id || user._id}`, {
+        id: user.id || user._id,
+        _id: user.id || user._id,
+        name: user.name,
+        email: cleanEmail,
+        role: 'superadmin',
+        createdAt: new Date().toISOString(),
+      });
     }
 
     const token = `token_user_${user.id}_${Date.now()}`;
     return {
       success: true,
-      message: 'Login successful!',
+      message: isSuperAdmin ? 'Welcome, Super Admin!' : 'Login successful!',
       token,
       user,
-      role: 'user',
+      role: isSuperAdmin ? 'superadmin' : (user.role || 'user'),
+      isAdmin: isSuperAdmin,
     };
   },
 
@@ -544,14 +635,27 @@ export const authService = {
     }
 
     const storedUser = JSON.parse(storedUserStr);
-    const path = storedUser.role === 'admin' || storedUser.role === 'superadmin' ? 'admins' : 'users';
+    const cleanEmail = storedUser.email?.toLowerCase()?.trim() || '';
+    const isSuperAdmin = isSuperAdminEmail(cleanEmail);
+
+    if (isSuperAdmin && storedUser.role !== 'superadmin') {
+      storedUser.role = 'superadmin';
+      localStorage.setItem('org_user', JSON.stringify(storedUser));
+    }
+
+    const path = storedUser.role === 'admin' || storedUser.role === 'superadmin' || isSuperAdmin ? 'admins' : 'users';
     const list = (await readPath(path)) || {};
     const found = list[storedUser.id] || list[storedUser._id] || storedUser;
+
+    if (isSuperAdmin) {
+      found.role = 'superadmin';
+    }
 
     return {
       success: true,
       user: found,
-      role: found.role || 'user',
+      role: isSuperAdmin ? 'superadmin' : (found.role || 'user'),
+      isAdmin: isSuperAdmin || found.role === 'admin' || found.role === 'superadmin',
     };
   },
 
@@ -579,6 +683,7 @@ export const authService = {
     const gUser = result.user;
     const cleanEmail = gUser.email?.toLowerCase().trim() || '';
     const userId = gUser.uid;
+    const isSuperAdmin = isSuperAdminEmail(cleanEmail);
 
     const usersObj = (await readPath('users')) || {};
     let existingUser = Object.values(usersObj).find(
@@ -591,32 +696,49 @@ export const authService = {
         ...existingUser,
         name: existingUser.name || gUser.displayName || 'Participant',
         photoURL: gUser.photoURL || existingUser.photoURL || '',
+        role: isSuperAdmin ? 'superadmin' : (existingUser.role || 'user'),
       };
       await updatePath(`users/${existingUser.id || existingUser._id}`, user);
     } else {
       user = {
         id: userId,
         _id: userId,
-        name: gUser.displayName || 'Participant',
+        name: gUser.displayName || (isSuperAdmin ? 'Super Administrator' : 'Participant'),
         email: cleanEmail,
         phone: gUser.phoneNumber || '',
-        college: '',
+        college: isSuperAdmin ? 'CIT Abu Road' : '',
         photoURL: gUser.photoURL || '',
-        role: 'user',
+        role: isSuperAdmin ? 'superadmin' : 'user',
         isVerified: true,
         createdAt: new Date().toISOString(),
       };
       await writePath(`users/${userId}`, user);
     }
 
+    // Persist superadmin record into admins table
+    if (isSuperAdmin) {
+      const adminRecord = {
+        id: userId,
+        _id: userId,
+        name: user.name,
+        email: cleanEmail,
+        role: 'superadmin',
+        photoURL: user.photoURL || '',
+        createdBy: 'system-superadmin-rule',
+        createdAt: new Date().toISOString(),
+      };
+      await writePath(`admins/${userId}`, adminRecord);
+    }
+
     const token = `token_google_${user.id}_${Date.now()}`;
-    const isProfileComplete = Boolean(user.phone && user.college);
+    const isProfileComplete = isSuperAdmin || Boolean(user.phone && user.college);
     return {
       success: true,
-      message: 'Signed in with Google successfully!',
+      message: isSuperAdmin ? 'Welcome, Super Admin!' : 'Signed in with Google successfully!',
       token,
       user,
-      role: 'user',
+      role: isSuperAdmin ? 'superadmin' : (user.role || 'user'),
+      isAdmin: isSuperAdmin,
       isProfileComplete,
     };
   },

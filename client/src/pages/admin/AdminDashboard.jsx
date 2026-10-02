@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import {
   Users,
   Calendar,
@@ -11,11 +12,16 @@ import {
   FileText,
   Clock,
   CheckCircle2,
+  Database,
+  RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [syncingCloud, setSyncingCloud] = useState(false);
+  const { success, error: showError } = useToast();
 
   useEffect(() => {
     fetchStats();
@@ -31,6 +37,23 @@ export default function AdminDashboard() {
       console.error('Failed to load admin stats:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSyncToCloud = async () => {
+    setSyncingCloud(true);
+    try {
+      const res = await api.post('/admin/sync-cloud');
+      if (res.data?.success) {
+        success('All events, problem statements, users, and teams are now pushed to Firebase Cloud!');
+        fetchStats();
+      } else {
+        showError('Firebase rejected write: In Firebase Console -> Realtime Database -> Rules tab, change rules to: { ".read": true, ".write": true } and click Publish.');
+      }
+    } catch (err) {
+      showError(err.message || 'Failed to sync to cloud.');
+    } finally {
+      setSyncingCloud(false);
     }
   };
 
@@ -50,6 +73,35 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Cloud Database Sync Strip */}
+      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-primary text-secondary flex items-center justify-center shrink-0">
+            <Database className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-dark">Firebase Cloud Realtime Database</span>
+              <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                active-cc357-default-rtdb
+              </span>
+            </div>
+            <p className="text-[11px] text-dark-muted">
+              Sync all registered teams, problem statements, and submissions directly into your live Firebase Cloud.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={handleSyncToCloud}
+          disabled={syncingCloud}
+          className="btn-primary py-2 px-4 text-xs font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${syncingCloud ? 'animate-spin' : ''}`} />
+          <span>{syncingCloud ? 'Syncing Cloud...' : 'Sync to Firebase Cloud'}</span>
+        </button>
+      </div>
+
       {/* Top Welcome */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-accent/15 pb-6">
         <div>

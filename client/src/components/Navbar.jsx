@@ -5,7 +5,7 @@ import { LogOut, Shield, Menu, X, User } from 'lucide-react';
 import hackwaysLogo from '../assets/hackways-logo.jpg';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,7 +18,7 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
 
-  const brandLink = user ? (user.role === 'admin' ? '/admin/dashboard' : '/dashboard') : '/';
+  const brandLink = user ? (isAdmin ? '/admin/dashboard' : '/dashboard') : '/';
 
   const scrollToSection = (sectionId) => {
     setMobileMenuOpen(false);
@@ -109,14 +109,14 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center gap-2.5">
                 <Link
-                  to="/dashboard"
+                  to={brandLink}
                   className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-secondary text-primary hover:bg-secondary-hover transition-colors shadow-xs"
                 >
-                  Dashboard
+                  {isAdmin ? 'Admin Portal' : 'Dashboard'}
                 </Link>
 
                 <Link
-                  to="/dashboard"
+                  to={brandLink}
                   className="flex items-center gap-2 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                 >
                   {user.photoURL ? (
@@ -201,11 +201,11 @@ export default function Navbar() {
                   Signed in as <strong className="text-white">{user.name}</strong> ({user.email})
                 </div>
                 <Link
-                  to="/dashboard"
+                  to={brandLink}
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold bg-secondary text-primary rounded-lg shadow-sm"
                 >
-                  Go to Student Dashboard
+                  {isAdmin ? 'Go to Admin Console' : 'Go to Student Dashboard'}
                 </Link>
                 <button
                   onClick={handleLogout}

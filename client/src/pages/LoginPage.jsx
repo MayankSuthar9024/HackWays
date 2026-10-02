@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, isSuperAdmin } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import hackwaysLogo from '../assets/hackways-logo.jpg';
 import {
@@ -39,16 +39,21 @@ export default function LoginPage() {
   const [college, setCollege] = useState('');
   const [photoURL, setPhotoURL] = useState('');
 
-  const getDestination = () => {
+  const getDestination = (targetUser) => {
+    const checkUser = targetUser || user;
+    if (isSuperAdmin(checkUser?.email) || checkUser?.role === 'superadmin' || checkUser?.role === 'admin') {
+      return '/admin/dashboard';
+    }
     const from = location.state?.from?.pathname;
-    return from && from !== '/' ? from : '/dashboard';
+    return from && from !== '/' && !from.includes('/login') ? from : '/dashboard';
   };
 
   // Check login state on mount
   useEffect(() => {
     if (user) {
-      if (user.phone && user.college) {
-        navigate(getDestination(), { replace: true });
+      const isSuper = isSuperAdmin(user.email) || user.role === 'superadmin' || user.role === 'admin';
+      if (isSuper || (user.phone && user.college)) {
+        navigate(getDestination(user), { replace: true });
       } else {
         // User logged in via Google but profile incomplete
         setName(user.name || '');
@@ -67,9 +72,10 @@ export default function LoginPage() {
       const res = await loginWithGoogle();
       if (res.success) {
         const loggedUser = res.user;
-        if (res.isProfileComplete || (loggedUser?.phone && loggedUser?.college)) {
+        const isSuper = isSuperAdmin(loggedUser?.email) || loggedUser?.role === 'superadmin' || loggedUser?.role === 'admin';
+        if (isSuper || res.isProfileComplete || (loggedUser?.phone && loggedUser?.college)) {
           success(`Welcome back, ${loggedUser.name}!`);
-          navigate(getDestination(), { replace: true });
+          navigate(getDestination(loggedUser), { replace: true });
         } else {
           setName(loggedUser.name || '');
           setEmail(loggedUser.email || '');

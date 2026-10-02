@@ -4,6 +4,7 @@ import {
   psService,
   submissionService,
   adminService,
+  syncCloudDatabase,
 } from './firebaseService';
 
 // Parse path and query parameters
@@ -153,6 +154,12 @@ const api = {
     if (path === '/auth/admin-login') {
       const data = await authService.adminLogin(body);
       return { data };
+    }
+
+    // Admin Sync to Cloud
+    if (path === '/admin/sync-cloud') {
+      const ok = await syncCloudDatabase();
+      return { data: { success: ok, message: ok ? 'Synchronized to Firebase Cloud!' : 'Firebase rules rejected write' } };
     }
 
     // Admin Create Admin

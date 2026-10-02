@@ -1,0 +1,50 @@
+{
+  "rules": {
+    ".read": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+    ".write": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+    "events": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')"
+    },
+    "problem_statements": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')"
+    },
+    "users": {
+      ".read": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+        ".write": "auth != null && (auth.uid == $uid || auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')"
+      }
+    },
+    "registrations": {
+      ".read": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+      "$regId": {
+        ".read": "auth != null && ($regId.contains(auth.uid) || auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+        ".write": "auth != null && ($regId.contains(auth.uid) || auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')"
+      }
+    },
+    "idea_submissions": {
+      ".read": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+      "$subId": {
+        ".read": "auth != null && ($subId.contains(auth.uid) || auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+        ".write": "auth != null && ($subId.contains(auth.uid) || auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')"
+      }
+    },
+    "prototype_submissions": {
+      ".read": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+      "$subId": {
+        ".read": "auth != null && ($subId.contains(auth.uid) || auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+        ".write": "auth != null && ($subId.contains(auth.uid) || auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')"
+      }
+    },
+    "admins": {
+      ".read": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+      ".write": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')"
+    },
+    "otps": {
+      ".read": "auth != null && (auth.token.email == 'discountbuddyshubham@gmail.com' || auth.token.email == 'sureshcitabu@gmail.com' || auth.token.email == 'tmgmayankff@gmail.com')",
+      ".write": true
+    }
+  }
+}
