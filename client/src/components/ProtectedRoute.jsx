@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export function UserProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+  const { user, isAdmin, isSuperAdminEmail, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -16,6 +16,15 @@ export function UserProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // If logged-in user is an Admin or Super Admin, automatically redirect to Admin Console
+  const searchParams = new URLSearchParams(location.search);
+  const isPreview = searchParams.get('preview') === 'true';
+  const isSuper = user?.role === 'superadmin' || user?.role === 'admin' || isAdmin;
+
+  if (isSuper && !isPreview) {
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return children;

@@ -120,7 +120,8 @@ export default function LoginPage() {
 
       if (res.success) {
         success('Profile saved successfully! Welcome to Hackways.');
-        navigate(getDestination(), { replace: true });
+        const updatedUser = res.user || user;
+        navigate(getDestination(updatedUser), { replace: true });
       }
     } catch (err) {
       console.error('Save Profile Error:', err);

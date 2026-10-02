@@ -37,13 +37,23 @@ import {
 const EVENT_ID = 'event_1';
 
 export default function StudentDashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const { success, error: showError, info } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Mobile sidebar toggle
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isPreview = searchParams.get('preview') === 'true';
+  const isSuper = isAdmin || user?.role === 'superadmin' || user?.role === 'admin';
+
+  // Automatically redirect admins to /admin/dashboard
+  useEffect(() => {
+    if (isSuper && !isPreview) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isSuper, isPreview, navigate]);
 
   // Active View / Tab: 'team' | 'ps' | 'solution' | 'prototype' | 'results'
   const activeTab = searchParams.get('tab') || 'team';
@@ -379,6 +389,19 @@ export default function StudentDashboardPage() {
               </span>
             </div>
           </div>
+
+          {/* Super Admin Quick Link */}
+          {isSuper && (
+            <div className="mx-4 my-2 p-3 rounded-xl bg-secondary text-primary font-bold text-xs flex items-center justify-between shadow-md">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-accent" />
+                <span>Super Admin</span>
+              </span>
+              <Link to="/admin/dashboard" className="px-2 py-1 rounded bg-primary text-white text-[11px] hover:bg-dark transition-colors">
+                Admin Console &rarr;
+              </Link>
+            </div>
+          )}
 
           {/* Event Quick Info Banner */}
           <div className="p-4 mx-4 my-3 bg-white/5 border border-white/10 rounded-xl space-y-1">

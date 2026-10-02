@@ -753,16 +753,30 @@ export const authService = {
 
     const storedUser = JSON.parse(storedUserStr);
     const userId = storedUser.id || storedUser._id;
+    const cleanEmail = storedUser.email?.toLowerCase().trim() || '';
+    const isSuper = isSuperAdminEmail(cleanEmail);
 
     const updatedData = {
       name: name?.trim() || storedUser.name,
       phone: phone?.trim() || '',
       college: college?.trim() || '',
+      role: isSuper ? 'superadmin' : (storedUser.role || 'user'),
       isProfileComplete: true,
       updatedAt: new Date().toISOString(),
     };
 
     await updatePath(`users/${userId}`, updatedData);
+    if (isSuper) {
+      await writePath(`admins/${userId}`, {
+        id: userId,
+        _id: userId,
+        name: updatedData.name,
+        email: cleanEmail,
+        role: 'superadmin',
+        createdAt: storedUser.createdAt || new Date().toISOString(),
+      });
+    }
+
     const updatedUser = {
       ...storedUser,
       ...updatedData,
@@ -773,6 +787,8 @@ export const authService = {
       success: true,
       message: 'Profile completed successfully!',
       user: updatedUser,
+      role: isSuper ? 'superadmin' : (updatedUser.role || 'user'),
+      isAdmin: isSuper,
     };
   },
 

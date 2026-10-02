@@ -57,9 +57,13 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await api.get('/auth/me');
         if (res.data.success) {
-          setUser(res.data.user);
-          setRole(res.data.role);
-          localStorage.setItem('org_user', JSON.stringify(res.data.user));
+          const userObj = res.data.user;
+          const isSuper = isSuperAdmin(userObj?.email);
+          const assignedRole = isSuper ? 'superadmin' : (res.data.role || userObj?.role || 'user');
+          const updatedUser = { ...userObj, role: assignedRole };
+          setUser(updatedUser);
+          setRole(assignedRole);
+          localStorage.setItem('org_user', JSON.stringify(updatedUser));
         }
       } catch (err) {
         console.warn('Session expired or invalid token:', err.message);
@@ -85,10 +89,13 @@ export const AuthProvider = ({ children }) => {
   const verifyOTP = async (payload) => {
     const res = await api.post('/auth/verify-otp', payload);
     if (res.data.success) {
+      const isSuper = isSuperAdmin(res.data.user?.email);
+      const assignedRole = isSuper ? 'superadmin' : 'user';
+      const updatedUser = { ...res.data.user, role: assignedRole };
       localStorage.setItem('org_token', res.data.token);
-      localStorage.setItem('org_user', JSON.stringify(res.data.user));
-      setUser(res.data.user);
-      setRole('user');
+      localStorage.setItem('org_user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      setRole(assignedRole);
     }
     return res.data;
   };
@@ -111,9 +118,11 @@ export const AuthProvider = ({ children }) => {
   const completeProfile = async (payload) => {
     const res = await api.post('/auth/complete-profile', payload);
     if (res.data.success) {
-      const assignedRole = isSuperAdmin(res.data.user?.email) ? 'superadmin' : (res.data.user?.role || role || 'user');
+      const isSuper = isSuperAdmin(res.data.user?.email || user?.email);
+      const assignedRole = isSuper ? 'superadmin' : (res.data.user?.role || role || 'user');
       const updatedUser = { ...res.data.user, role: assignedRole };
       setUser(updatedUser);
+      setRole(assignedRole);
       localStorage.setItem('org_user', JSON.stringify(updatedUser));
     }
     return res.data;
@@ -137,8 +146,11 @@ export const AuthProvider = ({ children }) => {
   const updateProfile = async (data) => {
     const res = await api.put('/auth/profile', data);
     if (res.data.success) {
-      setUser(res.data.user);
-      localStorage.setItem('org_user', JSON.stringify(res.data.user));
+      const isSuper = isSuperAdmin(res.data.user?.email || user?.email);
+      const assignedRole = isSuper ? 'superadmin' : (res.data.user?.role || user?.role || 'user');
+      const updatedUser = { ...res.data.user, role: assignedRole };
+      setUser(updatedUser);
+      localStorage.setItem('org_user', JSON.stringify(updatedUser));
     }
     return res.data;
   };
@@ -151,7 +163,12 @@ export const AuthProvider = ({ children }) => {
     setRole(null);
   };
 
-  const isAdmin = role === 'admin' || role === 'superadmin' || isSuperAdmin(user?.email);
+  const isAdmin =
+    role === 'admin' ||
+    role === 'superadmin' ||
+    user?.role === 'admin' ||
+    user?.role === 'superadmin' ||
+    isSuperAdmin(user?.email);
 
   return (
     <AuthContext.Provider
@@ -159,6 +176,7 @@ export const AuthProvider = ({ children }) => {
         user,
         role,
         isAdmin,
+        isSuperAdminEmail: isSuperAdmin,
         loading,
         sendOTP,
         verifyOTP,
