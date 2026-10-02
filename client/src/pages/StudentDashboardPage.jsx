@@ -1127,15 +1127,15 @@ export default function StudentDashboardPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                     <div className="bg-white/10 rounded-xl p-3 border border-white/10">
                       <div className="text-xs text-white/70">1st Place Champion</div>
-                      <div className="text-xl font-black text-secondary">₹15,000</div>
+                      <div className="text-xl font-black text-secondary">₹12,000</div>
                     </div>
                     <div className="bg-white/10 rounded-xl p-3 border border-white/10">
                       <div className="text-xs text-white/70">2nd Place Runner-Up</div>
-                      <div className="text-xl font-black text-secondary">₹7,000</div>
+                      <div className="text-xl font-black text-secondary">₹8,000</div>
                     </div>
                     <div className="bg-white/10 rounded-xl p-3 border border-white/10">
                       <div className="text-xs text-white/70">3rd Place Innovation</div>
-                      <div className="text-xl font-black text-secondary">₹3,000</div>
+                      <div className="text-xl font-black text-secondary">₹5,000</div>
                     </div>
                   </div>
                 </div>

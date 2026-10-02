@@ -445,7 +445,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-accent">1st Place Winner</span>
-                  <div className="text-3xl sm:text-4xl font-black text-primary mt-1">₹15,000</div>
+                  <div className="text-3xl sm:text-4xl font-black text-primary mt-1">₹12,000</div>
                   <p className="text-xs text-dark-muted font-medium mt-1">Direct Cash Prize for the Champion Team</p>
                 </div>
                 <ul className="space-y-2.5 pt-3 border-t border-accent/10 text-xs sm:text-sm text-dark">
@@ -476,7 +476,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-accent">2nd Place Runner-Up</span>
-                  <div className="text-3xl sm:text-4xl font-black text-primary mt-1">₹7,000</div>
+                  <div className="text-3xl sm:text-4xl font-black text-primary mt-1">₹8,000</div>
                   <p className="text-xs text-dark-muted font-medium mt-1">Direct Cash Prize for the 2nd Position</p>
                 </div>
                 <ul className="space-y-2.5 pt-3 border-t border-accent/10 text-xs sm:text-sm text-dark">
@@ -507,7 +507,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-accent">3rd Place Innovation</span>
-                  <div className="text-3xl sm:text-4xl font-black text-primary mt-1">₹3,000</div>
+                  <div className="text-3xl sm:text-4xl font-black text-primary mt-1">₹5,000</div>
                   <p className="text-xs text-dark-muted font-medium mt-1">Direct Cash Prize for Best Innovation</p>
                 </div>
                 <ul className="space-y-2.5 pt-3 border-t border-accent/10 text-xs sm:text-sm text-dark">
