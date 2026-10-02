@@ -30,24 +30,78 @@ export default function Footer() {
             <h4 className="text-sm font-semibold uppercase tracking-wider text-secondary">Navigation</h4>
             <ul className="space-y-2 text-sm text-white/75">
               <li>
-                <Link to="/" className="hover:text-white transition-colors">
+                <a
+                  href="/#"
+                  onClick={(e) => {
+                    if (window.location.pathname === '/') {
+                      e.preventDefault();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className="hover:text-white transition-colors"
+                >
                   Home
-                </Link>
+                </a>
               </li>
               <li>
-                <Link to="/events" className="hover:text-white transition-colors">
-                  All Events
-                </Link>
+                <a
+                  href="/#hackathon"
+                  onClick={(e) => {
+                    const el = document.getElementById('hackathon');
+                    if (el && window.location.pathname === '/') {
+                      e.preventDefault();
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="hover:text-white transition-colors"
+                >
+                  Hackathon
+                </a>
               </li>
               <li>
-                <Link to="/login" className="hover:text-white transition-colors">
-                  Participant Login
-                </Link>
+                <a
+                  href="/#prizes"
+                  onClick={(e) => {
+                    const el = document.getElementById('prizes');
+                    if (el && window.location.pathname === '/') {
+                      e.preventDefault();
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="hover:text-white transition-colors"
+                >
+                  Prizes
+                </a>
               </li>
               <li>
-                <Link to="/admin/login" className="hover:text-white transition-colors">
-                  Admin Portal
-                </Link>
+                <a
+                  href="/#how-to-register"
+                  onClick={(e) => {
+                    const el = document.getElementById('how-to-register');
+                    if (el && window.location.pathname === '/') {
+                      e.preventDefault();
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="hover:text-white transition-colors"
+                >
+                  How To register
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/#about"
+                  onClick={(e) => {
+                    const el = document.getElementById('about');
+                    if (el && window.location.pathname === '/') {
+                      e.preventDefault();
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="hover:text-white transition-colors"
+                >
+                  About
+                </a>
               </li>
             </ul>
           </div>
@@ -58,15 +112,19 @@ export default function Footer() {
             <ul className="space-y-2 text-sm text-white/75">
               <li className="flex items-center gap-2">
                 <Mail className="w-4 h-4 text-secondary flex-shrink-0" />
-                <span>support@hackways.org</span>
+                <a href="mailto:support@hackways.com" className="hover:text-white transition-colors">
+                  support@hackways.com
+                </a>
               </li>
               <li className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-secondary flex-shrink-0" />
-                <span>www.hackways.org</span>
+                <a href="https://hackways.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                  hackways.com
+                </a>
               </li>
-              <li className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-secondary flex-shrink-0" />
-                <span>Technology Innovation Center</span>
+              <li className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-secondary flex-shrink-0 mt-0.5" />
+                <span>Chartered Institute of Technology, Abu Road</span>
               </li>
             </ul>
           </div>
@@ -75,10 +133,11 @@ export default function Footer() {
         <div className="border-t border-white/10 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-white/60 gap-4">
           <p>&copy; {new Date().getFullYear()} Hackways. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <span className="hover:text-white cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-white cursor-pointer">Terms of Participation</span>
-            <Link to="/admin/login" className="hover:text-secondary transition-colors">
-              Admin Access
+            <Link to="/privacy" className="hover:text-white cursor-pointer transition-colors">
+              Privacy Policy
+            </Link>
+            <Link to="/terms" className="hover:text-white cursor-pointer transition-colors">
+              Terms of Participation
             </Link>
           </div>
         </div>

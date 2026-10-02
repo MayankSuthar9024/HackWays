@@ -51,7 +51,8 @@ export default function AdminProblemStatements() {
     try {
       const res = await api.get(`/events/${evtId}/problem-statements`);
       if (res.data.success) {
-        setStatements(res.data.statements || []);
+        const list = res.data.statements || res.data.problemStatements || [];
+        setStatements(Array.isArray(list) ? list : []);
       }
     } catch (err) {
       // If 403 because of schedule, admin will bypass with admin routes

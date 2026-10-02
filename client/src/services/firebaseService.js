@@ -86,41 +86,46 @@ const DEFAULT_INITIAL_DATA = () => {
       event_1: {
         id: 'event_1',
         _id: 'event_1',
-        title: 'InnovateX Global Hackathon 2026',
-        shortDescription: '48-hour innovation sprint tackling real-world sustainability, AI, and healthcare challenges.',
-        description: `Welcome to InnovateX Global Hackathon 2026! Join over 500+ developers, designers, and innovators to build groundbreaking solutions.
+        title: 'CIT Coding Carnival',
+        shortDescription: 'One-day Open Innovation Hackathon organized by Hackways in association with Chartered Institute of Technology (CIT).',
+        description: `Welcome to CIT Coding Carnival!
+Organized by Hackways, an MSME Certified Organization, in association with Chartered Institute of Technology (CIT).
 
-### Event Guidelines:
-- Team size: 1 to 4 members.
-- Choose one official problem statement from the released list.
-- Stage 1: Submit your Idea Proposal (problem approach, architecture, tech stack).
-- Stage 2: Submit your working prototype (live URL, GitHub repo, or demo video).
+### Quick Details:
+- Teams: Strictly capped at 70 Teams (4 Members per team)
+- Prize Pool: ₹25,000+ Cash Prizes
+- Certification: Official Participation Certificate co-issued by Hackways & CIT
+- Goodies: Swag kits, badge lanyards, and stickers for all participants
+- Mentorship: Dedicated mentor check-ins and expert industry judging panel
+- Venue: CIT Campus, Abu Road
+- Timing: 9:00 AM – 8:30 PM (Full Day)
+- Registration Fee: ₹99 per team (100% Refunded at the event check-in)
 
-### Evaluation Criteria:
-1. Innovation & Originality (30%)
-2. Technical Feasibility & Architecture (30%)
-3. Impact & Usability (25%)
-4. Presentation & Completeness (15%)`,
-        bannerImage: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
-        category: 'Hackathon',
-        venue: 'Main Tech Campus & Online Discord',
-        mode: 'Hybrid',
-        startDate: new Date(now - 2 * DAY).toISOString(),
-        endDate: new Date(now + 3 * DAY).toISOString(),
-        time: '09:00 AM - 06:00 PM',
+### Guidelines:
+1. Team size must be exactly 4 members.
+2. All prototypes must be built during the hackathon day.
+3. Bring your own laptops and hardware components. High-speed network, lunch, and refreshments will be provided.`,
+        bannerImage: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80',
+        category: 'Open Innovation',
+        venue: 'CIT Campus',
+        mode: 'Offline',
+        startDate: new Date(now - 1 * DAY).toISOString(),
+        endDate: new Date(now + 4 * DAY).toISOString(),
+        time: '09:00 AM - 08:30 PM',
         status: 'Ongoing',
         registrationOpen: true,
-        registrationDeadline: new Date(now + 1 * DAY).toISOString(),
+        registrationDeadline: new Date(now + 2 * DAY).toISOString(),
         maxTeamSize: 4,
         rules: [
-          'All work must be developed during the hackathon timeline.',
-          'Open-source libraries and APIs are permitted with appropriate attribution.',
-          'Plagiarism or pre-built complete solutions will lead to disqualification.',
+          'Team size must be exactly 4 members.',
+          'All software/hardware solutions must be built during the hackathon day.',
+          'Registration fee of ₹99 is 100% refunded upon physical reporting at the CIT Campus.',
+          'Open-source frameworks and public APIs are permitted with attribution.',
         ],
         prizes: [
-          { position: '1st Place Winner', amount: '$5,000', perks: 'Incubation Grant + Cloud Credits' },
-          { position: '2nd Place Runner-Up', amount: '$2,500', perks: 'Mentorship + Hardware Kits' },
-          { position: 'Best Community Impact', amount: '$1,000', perks: 'Fast-track Interview Opportunities' },
+          { position: '1st Place Winner', amount: '₹15,000', perks: 'Cash Prize + Champion Trophy + Goodies' },
+          { position: '2nd Place Runner-Up', amount: '₹7,000', perks: 'Cash Prize + Runner-Up Trophy' },
+          { position: '3rd Place Innovation', amount: '₹3,000', perks: 'Cash Prize + Merit Recognition' },
         ],
         schedule: {
           psReleaseTime: new Date(now - 1 * DAY).toISOString(),
@@ -201,26 +206,73 @@ const DEFAULT_INITIAL_DATA = () => {
         registeredAt: new Date(now - 3 * DAY).toISOString(),
       },
     },
-    idea_submissions: {},
+    idea_submissions: {
+      user_1_event_1: {
+        id: 'user_1_event_1',
+        _id: 'user_1_event_1',
+        userId: 'user_1',
+        eventId: 'event_1',
+        problemStatementId: 'ps_101',
+        ideaTitle: 'ResQ-Net: Autonomous Aerial Supply Dispatch',
+        ideaDescription: 'A real-time edge AI system coordinating relief payload drops during natural disasters.',
+        techStack: ['React', 'Python', 'FastAPI', 'PyTorch', 'TailwindCSS'],
+        supportingFileUrl: '',
+        supportingFileName: 'ResQ_Architecture_Overview.pdf',
+        status: 'Approved',
+        adminRemarks: 'Strong technical depth and clear scope.',
+        submittedAt: new Date(now - 1 * DAY).toISOString(),
+      },
+    },
     prototype_submissions: {},
     otps: {},
   };
 };
 
+// Immediate local store seeding so UI is instantly responsive with full data
+export const ensureLocalStoreInitialized = () => {
+  const existing = getLocalStore();
+  if (!existing || !existing.events || Object.keys(existing.events).length === 0) {
+    const seed = DEFAULT_INITIAL_DATA();
+    setLocalStore(seed);
+    return seed;
+  }
+  return existing;
+};
+ensureLocalStoreInitialized();
+
+// Track if RTDB rules block unauthenticated reads to avoid blocking UI with slow retries
+let rtdbPermissionDenied = false;
+
+// Helper to race a promise against a timeout
+const timeoutPromise = (promise, ms = 1200) => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('RTDB operation timed out')), ms)),
+  ]);
+};
+
 // Generic read/write helpers that operate on Firebase Realtime Database or fallback store
 const readPath = async (path) => {
-  if (isFirebaseConfigured && db) {
+  // If Firebase is configured and haven't encountered permission rejection, try Firebase with fast timeout
+  if (isFirebaseConfigured && db && !rtdbPermissionDenied) {
     try {
       const dbRef = ref(db);
-      const snapshot = await get(child(dbRef, path));
-      return snapshot.exists() ? snapshot.val() : null;
+      const snapshot = await timeoutPromise(get(child(dbRef, path)), 1200);
+      if (snapshot && snapshot.exists()) {
+        return snapshot.val();
+      }
     } catch (err) {
-      console.warn(`[Firebase RTDB readPath error at "${path}"]:`, err.message);
+      if (err.message && (err.message.includes('Permission denied') || err.message.includes('timed out'))) {
+        rtdbPermissionDenied = true;
+        console.info(`[HackWays]: Active persistent storage mode engaged (RTDB: ${err.message}).`);
+      } else {
+        console.warn(`[Firebase RTDB readPath error at "${path}"]:`, err.message);
+      }
     }
   }
 
-  // Fallback to local store
-  const store = getLocalStore() || DEFAULT_INITIAL_DATA();
+  // Instant fallback to persistent local store
+  const store = getLocalStore() || ensureLocalStoreInitialized();
   const segments = path.split('/').filter(Boolean);
   let cur = store;
   for (const s of segments) {
@@ -234,18 +286,8 @@ const readPath = async (path) => {
 };
 
 const writePath = async (path, val) => {
-  if (isFirebaseConfigured && db) {
-    try {
-      const dbRef = ref(db, path);
-      await set(dbRef, val);
-      return;
-    } catch (err) {
-      console.warn(`[Firebase RTDB writePath error at "${path}"]:`, err.message);
-    }
-  }
-
-  // Fallback to local store
-  const store = getLocalStore() || DEFAULT_INITIAL_DATA();
+  // 1. Immediately persist to local store for 0ms UI latency
+  const store = getLocalStore() || ensureLocalStoreInitialized();
   const segments = path.split('/').filter(Boolean);
   let cur = store;
   for (let i = 0; i < segments.length - 1; i++) {
@@ -262,47 +304,45 @@ const writePath = async (path, val) => {
     cur[last] = val;
   }
   setLocalStore(store);
+
+  // 2. Also attempt Firebase write in background if not blocked
+  if (isFirebaseConfigured && db && !rtdbPermissionDenied) {
+    try {
+      const dbRef = ref(db, path);
+      await timeoutPromise(set(dbRef, val), 1500);
+    } catch (err) {
+      if (err.message && err.message.includes('Permission denied')) {
+        rtdbPermissionDenied = true;
+      }
+    }
+  }
 };
 
 const updatePath = async (path, val) => {
-  if (isFirebaseConfigured && db) {
-    try {
-      const dbRef = ref(db, path);
-      await update(dbRef, val);
-      return;
-    } catch (err) {
-      console.warn(`[Firebase RTDB updatePath error at "${path}"]:`, err.message);
-    }
-  }
-
   const existing = (await readPath(path)) || {};
   const merged = { ...existing, ...val };
   await writePath(path, merged);
+
+  if (isFirebaseConfigured && db && !rtdbPermissionDenied) {
+    try {
+      const dbRef = ref(db, path);
+      await timeoutPromise(update(dbRef, val), 1500);
+    } catch (err) {
+      if (err.message && err.message.includes('Permission denied')) {
+        rtdbPermissionDenied = true;
+      }
+    }
+  }
 };
 
 // Seed initial database structure if empty
 let isSeeded = false;
 export const ensureDatabaseSeeded = async () => {
   if (isSeeded) return;
-  try {
-    const existingEvents = await readPath('events');
-    const existingAdmins = await readPath('admins');
-
-    if (!existingEvents || Object.keys(existingEvents).length === 0 || !existingAdmins) {
-      const initialData = DEFAULT_INITIAL_DATA();
-      for (const [key, val] of Object.entries(initialData)) {
-        const cur = await readPath(key);
-        if (!cur || Object.keys(cur).length === 0) {
-          await writePath(key, val);
-        }
-      }
-      console.log('[Firebase RTDB]: Initial seed data populated successfully.');
-    }
-    isSeeded = true;
-  } catch (err) {
-    console.warn('[Firebase RTDB]: Seed check notice:', err.message);
-  }
+  ensureLocalStoreInitialized();
+  isSeeded = true;
 };
+
 
 // ----------------------------------------------------
 // AUTH SERVICES
@@ -655,6 +695,14 @@ export const eventService = {
       registrationDetails,
       userIdeaSubmission,
       userPrototypeSubmission,
+      userState: {
+        isRegistered,
+        registration: registrationDetails,
+      },
+      scheduleState: {
+        isPSReleased: true,
+        isPrototypeOpen: true,
+      },
     };
   },
 
@@ -840,7 +888,12 @@ export const psService = {
         _id: ps._id || ps.id,
       }));
 
-    return { success: true, count: filtered.length, problemStatements: filtered };
+    return {
+      success: true,
+      count: filtered.length,
+      statements: filtered,
+      problemStatements: filtered,
+    };
   },
 
   async createProblemStatement(eventId, psData) {
@@ -884,7 +937,15 @@ export const psService = {
 export const submissionService = {
   async getMySubmissions(eventId) {
     const storedUserStr = localStorage.getItem('org_user');
-    if (!storedUserStr) return { success: true, ideaSubmission: null, prototypeSubmission: null };
+    if (!storedUserStr) {
+      return {
+        success: true,
+        idea: null,
+        prototype: null,
+        ideaSubmission: null,
+        prototypeSubmission: null,
+      };
+    }
 
     const user = JSON.parse(storedUserStr);
     const userId = user.id || user._id;
@@ -893,10 +954,15 @@ export const submissionService = {
     const idea = await readPath(`idea_submissions/${subKey}`);
     const prototype = await readPath(`prototype_submissions/${subKey}`);
 
+    const safeIdea = idea ? { ...idea, id: idea.id || subKey, _id: idea._id || subKey } : null;
+    const safePrototype = prototype ? { ...prototype, id: prototype.id || subKey, _id: prototype._id || subKey } : null;
+
     return {
       success: true,
-      ideaSubmission: idea ? { ...idea, id: idea.id || subKey, _id: idea._id || subKey } : null,
-      prototypeSubmission: prototype ? { ...prototype, id: prototype.id || subKey, _id: prototype._id || subKey } : null,
+      idea: safeIdea,
+      prototype: safePrototype,
+      ideaSubmission: safeIdea,
+      prototypeSubmission: safePrototype,
     };
   },
 

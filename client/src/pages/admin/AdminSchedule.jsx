@@ -37,9 +37,15 @@ export default function AdminSchedule() {
   }, [selectedEventId, events]);
 
   const formatDateTimeLocal = (dateStr) => {
-    const d = new Date(dateStr);
-    const offset = d.getTimezoneOffset() * 60000;
-    return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      const offset = d.getTimezoneOffset() * 60000;
+      return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+    } catch {
+      return '';
+    }
   };
 
   const fetchEvents = async () => {

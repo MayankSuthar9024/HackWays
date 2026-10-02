@@ -9,6 +9,8 @@ import EventsPage from './pages/EventsPage';
 import EventDetailPage from './pages/EventDetailPage';
 import MyEventsPage from './pages/MyEventsPage';
 import EventSubmissionPage from './pages/EventSubmissionPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -73,6 +75,23 @@ export default function App() {
         element={
           <PublicLayout>
             <EventDetailPage />
+          </PublicLayout>
+        }
+      />
+
+      <Route
+        path="/privacy"
+        element={
+          <PublicLayout>
+            <PrivacyPolicyPage />
+          </PublicLayout>
+        }
+      />
+      <Route
+        path="/terms"
+        element={
+          <PublicLayout>
+            <TermsPage />
           </PublicLayout>
         }
       />

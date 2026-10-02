@@ -71,21 +71,47 @@ const api = {
     const psMatch = path.match(/^\/events\/([^/]+)\/problem-statements$/);
     if (psMatch) {
       const data = await psService.getEventProblemStatements(psMatch[1]);
-      return { data };
+      return {
+        data: {
+          ...data,
+          statements: data.problemStatements || data.statements || [],
+          problemStatements: data.problemStatements || data.statements || [],
+        },
+      };
     }
 
     // Event Submissions Mine: /events/:id/submissions/mine
     const mineMatch = path.match(/^\/events\/([^/]+)\/submissions\/mine$/);
     if (mineMatch) {
       const data = await submissionService.getMySubmissions(mineMatch[1]);
-      return { data };
+      return {
+        data: {
+          ...data,
+          idea: data.idea || data.ideaSubmission || null,
+          prototype: data.prototype || data.prototypeSubmission || null,
+          ideaSubmission: data.idea || data.ideaSubmission || null,
+          prototypeSubmission: data.prototype || data.prototypeSubmission || null,
+        },
+      };
     }
 
     // Single Event Detail: /events/:id
     const singleEventMatch = path.match(/^\/events\/([^/]+)$/);
     if (singleEventMatch) {
       const data = await eventService.getEventById(singleEventMatch[1]);
-      return { data };
+      return {
+        data: {
+          ...data,
+          userState: data.userState || {
+            isRegistered: Boolean(data.isRegistered),
+            registration: data.registrationDetails || null,
+          },
+          scheduleState: data.scheduleState || {
+            isPSReleased: true,
+            isPrototypeOpen: true,
+          },
+        },
+      };
     }
 
     // All Events: /events

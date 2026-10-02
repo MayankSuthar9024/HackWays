@@ -114,6 +114,19 @@ export default function AdminLoginPage() {
                 )}
               </button>
             </div>
+
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@organization.org');
+                  setPassword('Admin@Org2026!');
+                }}
+                className="text-[11px] font-semibold text-primary hover:text-accent underline transition-colors"
+              >
+                Use Demo Credentials (admin@organization.org)
+              </button>
+            </div>
           </form>
 
           <div className="mt-6 pt-6 border-t border-accent/15 text-center">

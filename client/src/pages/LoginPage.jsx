@@ -126,11 +126,11 @@ export default function LoginPage() {
             <Sparkles className="w-6 h-6 text-accent" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-dark">
-            {step === 'signin' ? 'Sign in to Hackways' : 'Complete Your Profile'}
+            {step === 'signin' ? 'Start Registration' : 'Complete Your Profile'}
           </h1>
           <p className="text-xs sm:text-sm text-dark-muted">
             {step === 'signin'
-              ? 'One-click direct Google sign-in to explore and register for hackathons'
+              ? 'Sign in with your Google account to register your team for CIT Coding Carnival 2026'
               : 'Save your participant information to register for hackathons & events'}
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3.5 py-3.5 px-5 rounded-xl border border-accent/30 bg-white hover:bg-neutral-50 text-dark font-bold text-sm sm:text-base transition-all shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-60 cursor-pointer group"
+                className="w-full flex items-center justify-center gap-3.5 py-4 px-5 rounded-xl border border-accent/30 bg-white hover:bg-neutral-50 text-dark font-bold text-sm sm:text-base transition-all shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-60 cursor-pointer group"
               >
                 {googleLoading ? (
                   <RefreshCw className="w-5 h-5 animate-spin text-primary" />
@@ -171,31 +171,20 @@ export default function LoginPage() {
                 <span>Continue with Google</span>
               </button>
 
-              {/* Benefits checklist */}
+              {/* Simple Benefits / Steps */}
               <div className="rounded-xl bg-background-cream/60 p-4 border border-accent/15 space-y-2.5">
                 <div className="flex items-center gap-2.5 text-xs text-dark font-medium">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>Instant access with your Google account</span>
+                  <span>1-click secure Google verification</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs text-dark font-medium">
-                  <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                  <span>Real-time event synchronization powered by Firebase</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>Register your team of 4 members</span>
                 </div>
                 <div className="flex items-center gap-2.5 text-xs text-dark font-medium">
-                  <Lock className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>No passwords or OTP verification required</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>₹99 refundable entry — 100% refunded at event</span>
                 </div>
-              </div>
-
-              {/* Admin Portal Link */}
-              <div className="pt-2 border-t border-accent/15 text-center">
-                <Link
-                  to="/admin/login"
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-accent transition-colors"
-                >
-                  <Shield className="w-3.5 h-3.5" />
-                  <span>Event Organizer / Admin Sign In &rarr;</span>
-                </Link>
               </div>
             </div>
           ) : (

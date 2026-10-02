@@ -140,7 +140,13 @@ export default function EventDetailPage() {
             <div>
               <span className="text-dark-muted block">Dates</span>
               <strong className="text-dark font-semibold">
-                {new Date(event.startDate).toLocaleDateString()} - {new Date(event.endDate).toLocaleDateString()}
+                {event.startDate && !isNaN(new Date(event.startDate).getTime())
+                  ? `${new Date(event.startDate).toLocaleDateString()} - ${
+                      event.endDate && !isNaN(new Date(event.endDate).getTime())
+                        ? new Date(event.endDate).toLocaleDateString()
+                        : 'Ongoing'
+                    }`
+                  : 'Dates Announced Soon'}
               </strong>
             </div>
             <div>

@@ -77,7 +77,8 @@ export default function EventSubmissionPage() {
         const psRes = await api.get(`/events/${eventId}/problem-statements`);
         if (psRes.data.success) {
           setIsPSReleased(true);
-          setProblemStatements(psRes.data.statements);
+          const rawStatements = psRes.data.statements || psRes.data.problemStatements || [];
+          setProblemStatements(Array.isArray(rawStatements) ? rawStatements : []);
         }
       } catch (err) {
         if (err.response?.status === 403 && err.response?.data?.releaseTime) {
@@ -90,14 +91,16 @@ export default function EventSubmissionPage() {
       try {
         const subRes = await api.get(`/events/${eventId}/submissions/mine`);
         if (subRes.data.success) {
-          setMyIdea(subRes.data.idea);
-          setMyPrototype(subRes.data.prototype);
+          const idea = subRes.data.idea || subRes.data.ideaSubmission || null;
+          const proto = subRes.data.prototype || subRes.data.prototypeSubmission || null;
+          setMyIdea(idea);
+          setMyPrototype(proto);
 
-          if (subRes.data.idea) {
-            setSelectedPS(subRes.data.idea.problemStatement?._id || subRes.data.idea.problemStatement);
-            setIdeaTitle(subRes.data.idea.ideaTitle);
-            setIdeaDescription(subRes.data.idea.ideaDescription);
-            setTechStackInput((subRes.data.idea.techStack || []).join(', '));
+          if (idea) {
+            setSelectedPS(idea.problemStatement?._id || idea.problemStatementId || idea.problemStatement);
+            setIdeaTitle(idea.ideaTitle || '');
+            setIdeaDescription(idea.ideaDescription || '');
+            setTechStackInput((idea.techStack || []).join(', '));
           }
 
           if (subRes.data.prototype) {
@@ -205,7 +208,15 @@ export default function EventSubmissionPage() {
   }
 
   if (!event) {
-    return null;
+    return (
+      <div className="max-w-3xl mx-auto py-16 px-4 text-center card bg-white my-10">
+        <h2 className="text-xl font-bold text-dark">Event Not Found</h2>
+        <p className="text-sm text-dark-muted mt-2">The event could not be found or has been removed.</p>
+        <Link to="/events" className="btn-primary mt-6 text-xs inline-flex">
+          Back to Events
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -268,42 +279,48 @@ export default function EventSubmissionPage() {
           </div>
         ) : (
           /* Released PS List */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {problemStatements.map((ps) => (
-              <div
-                key={ps._id}
-                className={`bg-white rounded-2xl border p-6 shadow-card flex flex-col justify-between space-y-4 transition-all ${
-                  selectedPS === ps._id ? 'border-primary ring-2 ring-primary/20' : 'border-accent/15'
-                }`}
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold px-2.5 py-1 bg-primary text-secondary rounded-lg">
-                      {ps.psCode}
-                    </span>
-                    <span className="text-[11px] font-semibold text-accent uppercase tracking-wide">
-                      {ps.category}
-                    </span>
+          (problemStatements && problemStatements.length > 0) ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {problemStatements.map((ps) => (
+                <div
+                  key={ps._id || ps.id}
+                  className={`bg-white rounded-2xl border p-6 shadow-card flex flex-col justify-between space-y-4 transition-all ${
+                    selectedPS === (ps._id || ps.id) ? 'border-primary ring-2 ring-primary/20' : 'border-accent/15'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold px-2.5 py-1 bg-primary text-secondary rounded-lg">
+                        {ps.psCode}
+                      </span>
+                      <span className="text-[11px] font-semibold text-accent uppercase tracking-wide">
+                        {ps.category}
+                      </span>
+                    </div>
+
+                    <h4 className="text-base font-bold text-dark leading-snug">{ps.title}</h4>
+                    <p className="text-xs text-dark-muted leading-relaxed line-clamp-4">{ps.description}</p>
                   </div>
 
-                  <h4 className="text-base font-bold text-dark leading-snug">{ps.title}</h4>
-                  <p className="text-xs text-dark-muted leading-relaxed line-clamp-4">{ps.description}</p>
-                </div>
-
-                <div className="pt-3 border-t border-background-cream flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-dark-muted">
-                    Difficulty: <span className="text-primary font-semibold">{ps.difficulty}</span>
-                  </span>
-
-                  {myIdea?.problemStatement?._id === ps._id && (
-                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      Selected
+                  <div className="pt-3 border-t border-background-cream flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-dark-muted">
+                      Difficulty: <span className="text-primary font-semibold">{ps.difficulty}</span>
                     </span>
-                  )}
+
+                    {(myIdea?.problemStatement?._id === (ps._id || ps.id) || myIdea?.problemStatementId === (ps._id || ps.id)) && (
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Selected
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="card bg-white p-8 text-center text-sm text-dark-muted">
+              Problem statements are active. None have been released yet by the organizers.
+            </div>
+          )
         )}
       </div>
 

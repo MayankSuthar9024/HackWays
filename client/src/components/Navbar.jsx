@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, LogOut, Shield, Menu, X, Calendar, User, Compass } from 'lucide-react';
+import { LogOut, Shield, Menu, X, User } from 'lucide-react';
 
 export default function Navbar() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,64 +17,83 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
 
+  const scrollToSection = (sectionId) => {
+    setMobileMenuOpen(false);
+    if (sectionId === 'home') {
+      if (location.pathname !== '/') {
+        navigate('/');
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      return;
+    }
+    if (location.pathname !== '/') {
+      navigate(`/#${sectionId}`);
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+      return;
+    }
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-40 bg-primary text-white border-b border-white/10 shadow-soft">
+    <header className="sticky top-0 z-40 bg-primary/85 backdrop-blur-md text-white border-b border-white/10 shadow-soft">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand Logo & Name */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-lg bg-secondary text-primary flex items-center justify-center font-bold text-xl shadow-sm transition-transform group-hover:scale-105">
-              <Sparkles className="w-5 h-5 text-accent" />
-            </div>
-            <div>
-              <span className="font-bold text-lg tracking-tight block leading-tight text-white">
+          {/* Brand Logo & Name using the official Hackways Logo */}
+          <Link to="/" className="flex items-center gap-3 group shrink-0 mr-4">
+            <img
+              src="/hackways-logo.jpg"
+              alt="Hackways"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain shadow-sm border border-white/20 transition-transform group-hover:scale-105"
+            />
+            <div className="flex flex-col text-left">
+              <span className="font-black text-base sm:text-lg tracking-wider block leading-none text-white">
                 HACKWAYS
               </span>
-              <span className="text-[11px] text-secondary tracking-wider uppercase block font-medium">
-                Innovation & Events Hub
+              <span className="text-[9px] sm:text-[10px] text-secondary tracking-widest uppercase block font-semibold mt-1">
+                MSME Certified
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1">
-            <Link
-              to="/"
-              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/') ? 'bg-white/15 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
+          {/* Navigation: Exact 5 Links Requested */}
+          <nav className="hidden md:flex items-center gap-1.5 lg:gap-2">
+            <button
+              onClick={() => scrollToSection('home')}
+              className="px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
               Home
-            </Link>
-            <Link
-              to="/events"
-              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/events') ? 'bg-white/15 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'
-              }`}
+            </button>
+            <button
+              onClick={() => scrollToSection('hackathon')}
+              className="px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
             >
-              Events
-            </Link>
-
-            {user && !isAdmin && (
-              <Link
-                to="/my-events"
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/my-events') ? 'bg-white/15 text-white' : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                My Events
-              </Link>
-            )}
-
-            {isAdmin && (
-              <Link
-                to="/admin/dashboard"
-                className="px-3.5 py-2 rounded-lg text-sm font-medium bg-secondary text-primary hover:bg-secondary-hover transition-colors inline-flex items-center gap-1.5 ml-2"
-              >
-                <Shield className="w-4 h-4 text-accent" />
-                Admin Panel
-              </Link>
-            )}
+              Hackathon
+            </button>
+            <button
+              onClick={() => scrollToSection('prizes')}
+              className="px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              Prizes
+            </button>
+            <button
+              onClick={() => scrollToSection('how-to-register')}
+              className="px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              How To register
+            </button>
+            <button
+              onClick={() => scrollToSection('about')}
+              className="px-3 py-1.5 rounded-lg text-xs lg:text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              About
+            </button>
           </nav>
 
           {/* User Auth Buttons / Profile */}
@@ -87,12 +106,7 @@ export default function Navbar() {
                   ) : (
                     <User className="w-3.5 h-3.5 text-secondary" />
                   )}
-                  <span className="text-white max-w-[120px] truncate">{user.name}</span>
-                  {isAdmin && (
-                    <span className="bg-secondary text-primary text-[10px] font-bold px-1.5 py-0.5 rounded uppercase">
-                      Admin
-                    </span>
-                  )}
+                  <span className="text-white max-w-[140px] truncate">{user.name}</span>
                 </div>
 
                 <button
@@ -107,9 +121,9 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 rounded-lg text-sm font-medium bg-secondary text-primary hover:bg-secondary-hover transition-colors shadow-sm"
+                  className="px-5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-secondary text-primary hover:bg-secondary-hover transition-colors shadow-sm"
                 >
-                  Login / Sign Up
+                  Register
                 </Link>
               </div>
             )}
@@ -128,43 +142,39 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer: Exact 5 Links Requested */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-primary-dark border-t border-white/10 px-4 pt-3 pb-6 space-y-2">
-          <Link
-            to="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-lg text-base font-medium text-white/90 hover:bg-white/10"
+        <div className="md:hidden bg-primary-dark border-t border-white/10 px-4 pt-3 pb-6 space-y-1.5">
+          <button
+            onClick={() => scrollToSection('home')}
+            className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-white/10"
           >
             Home
-          </Link>
-          <Link
-            to="/events"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-lg text-base font-medium text-white/90 hover:bg-white/10"
+          </button>
+          <button
+            onClick={() => scrollToSection('hackathon')}
+            className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-white/90 hover:bg-white/10"
           >
-            Events
-          </Link>
-
-          {user && !isAdmin && (
-            <Link
-              to="/my-events"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-base font-medium text-white/90 hover:bg-white/10"
-            >
-              My Events
-            </Link>
-          )}
-
-          {isAdmin && (
-            <Link
-              to="/admin/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-base font-medium bg-secondary text-primary"
-            >
-              Admin Dashboard
-            </Link>
-          )}
+            Hackathon
+          </button>
+          <button
+            onClick={() => scrollToSection('prizes')}
+            className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-white/90 hover:bg-white/10"
+          >
+            Prizes
+          </button>
+          <button
+            onClick={() => scrollToSection('how-to-register')}
+            className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-white/90 hover:bg-white/10"
+          >
+            How To register
+          </button>
+          <button
+            onClick={() => scrollToSection('about')}
+            className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-white/90 hover:bg-white/10"
+          >
+            About
+          </button>
 
           <div className="pt-4 border-t border-white/10">
             {user ? (
@@ -184,9 +194,9 @@ export default function Navbar() {
               <Link
                 to="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-secondary text-primary rounded-lg font-semibold"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold bg-secondary text-primary rounded-lg shadow-sm"
               >
-                Login / Sign Up
+                Register
               </Link>
             )}
           </div>

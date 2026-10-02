@@ -27,13 +27,14 @@ export default function EventsPage() {
     }
   };
 
-  const filteredEvents = events.filter((evt) => {
+  const filteredEvents = (events || []).filter((evt) => {
+    if (!evt) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      evt.title.toLowerCase().includes(q) ||
-      evt.shortDescription.toLowerCase().includes(q) ||
-      evt.category.toLowerCase().includes(q)
+      (evt.title || '').toLowerCase().includes(q) ||
+      (evt.shortDescription || '').toLowerCase().includes(q) ||
+      (evt.category || '').toLowerCase().includes(q)
     );
   });
 
@@ -140,7 +141,13 @@ export default function EventsPage() {
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                       <span>
-                        {new Date(evt.startDate).toLocaleDateString()} - {new Date(evt.endDate).toLocaleDateString()}
+                        {evt.startDate && !isNaN(new Date(evt.startDate).getTime())
+                          ? `${new Date(evt.startDate).toLocaleDateString()} - ${
+                              evt.endDate && !isNaN(new Date(evt.endDate).getTime())
+                                ? new Date(evt.endDate).toLocaleDateString()
+                                : 'Ongoing'
+                            }`
+                          : 'Dates Announced Soon'}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
