@@ -193,6 +193,30 @@ Organized by Hackways, an MSME Certified Organization, in association with Chart
         attachments: [],
         createdAt: new Date().toISOString(),
       },
+      ps_103: {
+        id: 'ps_103',
+        _id: 'ps_103',
+        eventId: 'event_1',
+        psCode: 'PS-103',
+        title: 'Smart Campus Utility: Automated Attendance & Meal Management',
+        description: 'Build a high-speed campus utility web/mobile application for real-time student check-ins, mess/canteen token tracking, and hostel grievance redressal.',
+        category: 'Campus & Student Utilities',
+        difficulty: 'Easy',
+        attachments: [],
+        createdAt: new Date().toISOString(),
+      },
+      ps_104: {
+        id: 'ps_104',
+        _id: 'ps_104',
+        eventId: 'event_1',
+        psCode: 'PS-104',
+        title: 'Open Innovation Track: Impact Prototype for Real-World Problem',
+        description: 'Design and build any novel software, hardware, or IoT prototype addressing sustainability, accessibility, education, or local commerce.',
+        category: 'Open Innovation',
+        difficulty: 'Medium',
+        attachments: [],
+        createdAt: new Date().toISOString(),
+      },
     },
     registrations: {
       user_1_event_1: {
@@ -240,11 +264,10 @@ export const ensureLocalStoreInitialized = () => {
 };
 ensureLocalStoreInitialized();
 
-// Track if RTDB rules block unauthenticated reads to avoid blocking UI with slow retries
-let rtdbPermissionDenied = false;
+ensureLocalStoreInitialized();
 
 // Helper to race a promise against a timeout
-const timeoutPromise = (promise, ms = 1200) => {
+const timeoutPromise = (promise, ms = 3000) => {
   return Promise.race([
     promise,
     new Promise((_, reject) => setTimeout(() => reject(new Error('RTDB operation timed out')), ms)),
@@ -253,25 +276,38 @@ const timeoutPromise = (promise, ms = 1200) => {
 
 // Generic read/write helpers that operate on Firebase Realtime Database or fallback store
 const readPath = async (path) => {
-  // If Firebase is configured and haven't encountered permission rejection, try Firebase with fast timeout
-  if (isFirebaseConfigured && db && !rtdbPermissionDenied) {
+  // 1. If Firebase is configured, attempt reading live cloud data
+  if (isFirebaseConfigured && db) {
     try {
       const dbRef = ref(db);
-      const snapshot = await timeoutPromise(get(child(dbRef, path)), 1200);
+      const snapshot = await timeoutPromise(get(child(dbRef, path)), 3000);
       if (snapshot && snapshot.exists()) {
-        return snapshot.val();
+        const val = snapshot.val();
+        // Keep local cache synced with cloud truth
+        const store = getLocalStore() || ensureLocalStoreInitialized();
+        const segments = path.split('/').filter(Boolean);
+        let cur = store;
+        for (let i = 0; i < segments.length - 1; i++) {
+          const s = segments[i];
+          if (!cur[s] || typeof cur[s] !== 'object') cur[s] = {};
+          cur = cur[s];
+        }
+        if (segments.length > 0) {
+          cur[segments[segments.length - 1]] = val;
+          setLocalStore(store);
+        }
+        return val;
       }
     } catch (err) {
-      if (err.message && (err.message.includes('Permission denied') || err.message.includes('timed out'))) {
-        rtdbPermissionDenied = true;
-        console.info(`[HackWays]: Active persistent storage mode engaged (RTDB: ${err.message}).`);
+      if (err.message && err.message.includes('Permission denied')) {
+        console.warn(`[Firebase RTDB]: Cloud read at "${path}" denied by Security Rules. Check Firebase Console Rules.`);
       } else {
-        console.warn(`[Firebase RTDB readPath error at "${path}"]:`, err.message);
+        console.warn(`[Firebase RTDB readPath "${path}"]:`, err.message);
       }
     }
   }
 
-  // Instant fallback to persistent local store
+  // 2. Instant fallback to persistent local store
   const store = getLocalStore() || ensureLocalStoreInitialized();
   const segments = path.split('/').filter(Boolean);
   let cur = store;
@@ -305,14 +341,20 @@ const writePath = async (path, val) => {
   }
   setLocalStore(store);
 
-  // 2. Also attempt Firebase write in background if not blocked
-  if (isFirebaseConfigured && db && !rtdbPermissionDenied) {
+  // 2. Persist to Firebase Realtime Database in cloud
+  if (isFirebaseConfigured && db) {
     try {
       const dbRef = ref(db, path);
-      await timeoutPromise(set(dbRef, val), 1500);
+      if (val === null) {
+        await timeoutPromise(remove(dbRef), 4000);
+      } else {
+        await timeoutPromise(set(dbRef, val), 4000);
+      }
+      console.log(`[Firebase RTDB Cloud]: Successfully saved to "${path}".`);
     } catch (err) {
+      console.error(`[Firebase RTDB Cloud Save Error at "${path}"]:`, err.message);
       if (err.message && err.message.includes('Permission denied')) {
-        rtdbPermissionDenied = true;
+        console.error('[Action Required]: In Firebase Console -> Realtime Database -> Rules, ensure ".read": true and ".write": true to enable cross-device synchronization.');
       }
     }
   }
@@ -323,14 +365,12 @@ const updatePath = async (path, val) => {
   const merged = { ...existing, ...val };
   await writePath(path, merged);
 
-  if (isFirebaseConfigured && db && !rtdbPermissionDenied) {
+  if (isFirebaseConfigured && db) {
     try {
       const dbRef = ref(db, path);
-      await timeoutPromise(update(dbRef, val), 1500);
+      await timeoutPromise(update(dbRef, val), 4000);
     } catch (err) {
-      if (err.message && err.message.includes('Permission denied')) {
-        rtdbPermissionDenied = true;
-      }
+      console.warn(`[Firebase RTDB Cloud update notice at "${path}"]:`, err.message);
     }
   }
 };
@@ -341,6 +381,21 @@ export const ensureDatabaseSeeded = async () => {
   if (isSeeded) return;
   ensureLocalStoreInitialized();
   isSeeded = true;
+
+  // Check if cloud Firebase needs initial seed
+  if (isFirebaseConfigured && db) {
+    try {
+      const dbRef = ref(db);
+      const snapshot = await timeoutPromise(get(child(dbRef, 'events/event_1')), 3000);
+      if (!snapshot || !snapshot.exists()) {
+        const initialSeed = DEFAULT_INITIAL_DATA();
+        await timeoutPromise(update(ref(db), initialSeed), 4000);
+        console.log('[Firebase RTDB]: Seeded default events and problem statements to Firebase Cloud.');
+      }
+    } catch (err) {
+      console.info('[Firebase RTDB Seed Notice]:', err.message);
+    }
+  }
 };
 
 
@@ -729,6 +784,11 @@ export const eventService = {
       eventId,
       teamName: payload.teamName || '',
       collegeOrOrg: payload.collegeOrOrg || user.college || '',
+      leaderName: user.name || payload.leaderName || '',
+      leaderEmail: user.email || payload.leaderEmail || '',
+      phone: payload.phone || user.phone || '',
+      teamMembers: payload.teamMembers || [],
+      trackPreference: payload.trackPreference || '',
       status: 'Registered',
       registeredAt: new Date().toISOString(),
     };
@@ -1000,8 +1060,8 @@ export const submissionService = {
       ideaTitle: raw.ideaTitle,
       ideaDescription: raw.ideaDescription,
       techStack,
-      supportingFileUrl: fileUrl,
-      supportingFileName: fileName,
+      supportingFileUrl: fileUrl || raw.supportingFileUrl || '',
+      supportingFileName: fileName || raw.supportingFileName || '',
       status: 'Submitted',
       adminRemarks: '',
       submittedAt: new Date().toISOString(),
@@ -1031,7 +1091,7 @@ export const submissionService = {
       }
       raw = Object.fromEntries(formData.entries());
     } else {
-      raw = formData;
+      raw = formData || {};
     }
 
     const protoData = {
@@ -1039,13 +1099,14 @@ export const submissionService = {
       _id: subKey,
       userId,
       eventId,
-      prototypeTitle: raw.prototypeTitle,
-      description: raw.description,
+      title: raw.title || raw.prototypeTitle || 'Working Prototype',
+      prototypeTitle: raw.prototypeTitle || raw.title || 'Working Prototype',
+      description: raw.description || '',
       githubUrl: raw.githubUrl || '',
       liveDemoUrl: raw.liveDemoUrl || '',
       driveUrl: raw.driveUrl || '',
-      uploadedFileUrl: fileUrl,
-      uploadedFileName: fileName,
+      uploadedFileUrl: fileUrl || raw.uploadedFileUrl || '',
+      uploadedFileName: fileName || raw.uploadedFileName || '',
       status: 'Submitted',
       adminRemarks: '',
       submittedAt: new Date().toISOString(),

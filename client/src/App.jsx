@@ -11,6 +11,7 @@ import MyEventsPage from './pages/MyEventsPage';
 import EventSubmissionPage from './pages/EventSubmissionPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
+import StudentDashboardPage from './pages/StudentDashboardPage';
 
 // Admin Pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -23,6 +24,7 @@ import AdminSubmissions from './pages/admin/AdminSubmissions';
 import AdminSettings from './pages/admin/AdminSettings';
 
 import { UserProtectedRoute, AdminProtectedRoute } from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 
 function PublicLayout({ children }) {
   return (
@@ -34,26 +36,48 @@ function PublicLayout({ children }) {
   );
 }
 
+function RootRoute() {
+  const { user, isAdmin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (user) {
+    return <Navigate to={isAdmin ? '/admin/dashboard' : '/dashboard'} replace />;
+  }
+
+  return (
+    <PublicLayout>
+      <LandingPage />
+    </PublicLayout>
+  );
+}
+
+function LoginRoute() {
+  const { user, isAdmin } = useAuth();
+
+  if (user) {
+    return <Navigate to={isAdmin ? '/admin/dashboard' : '/dashboard'} replace />;
+  }
+
+  return (
+    <PublicLayout>
+      <LoginPage />
+    </PublicLayout>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
       {/* Public / Participant Routes */}
-      <Route
-        path="/"
-        element={
-          <PublicLayout>
-            <LandingPage />
-          </PublicLayout>
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          <PublicLayout>
-            <LoginPage />
-          </PublicLayout>
-        }
-      />
+      <Route path="/" element={<RootRoute />} />
+      <Route path="/login" element={<LoginRoute />} />
       <Route
         path="/admin/login"
         element={
@@ -97,6 +121,15 @@ export default function App() {
       />
 
       {/* Protected Participant Routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <UserProtectedRoute>
+            <StudentDashboardPage />
+          </UserProtectedRoute>
+        }
+      />
+      <Route path="/student/dashboard" element={<Navigate to="/dashboard" replace />} />
       <Route
         path="/my-events"
         element={

@@ -80,8 +80,8 @@ const api = {
       };
     }
 
-    // Event Submissions Mine: /events/:id/submissions/mine
-    const mineMatch = path.match(/^\/events\/([^/]+)\/submissions\/mine$/);
+    // Event Submissions Mine: /events/:id/submissions/mine OR /my-submissions
+    const mineMatch = path.match(/^\/events\/([^/]+)\/submissions\/(?:mine|my-submissions)$/);
     if (mineMatch) {
       const data = await submissionService.getMySubmissions(mineMatch[1]);
       return {
@@ -99,12 +99,15 @@ const api = {
     const singleEventMatch = path.match(/^\/events\/([^/]+)$/);
     if (singleEventMatch) {
       const data = await eventService.getEventById(singleEventMatch[1]);
+      const reg = data.registrationDetails || data.registration || data.userState?.registration || null;
       return {
         data: {
           ...data,
+          registration: reg,
+          registrationDetails: reg,
           userState: data.userState || {
-            isRegistered: Boolean(data.isRegistered),
-            registration: data.registrationDetails || null,
+            isRegistered: Boolean(reg),
+            registration: reg,
           },
           scheduleState: data.scheduleState || {
             isPSReleased: true,

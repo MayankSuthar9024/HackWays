@@ -4,9 +4,29 @@ import api from '../services/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem('org_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [role, setRole] = useState(() => {
+    try {
+      const cached = localStorage.getItem('org_user');
+      if (!cached) return null;
+      const parsed = JSON.parse(cached);
+      return parsed.role || 'user';
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(() => {
+    const hasToken = !!localStorage.getItem('org_token');
+    const hasUser = !!localStorage.getItem('org_user');
+    return hasToken && !hasUser;
+  });
 
   // Initialize auth from localStorage / API
   useEffect(() => {

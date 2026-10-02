@@ -18,9 +18,15 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path;
 
+  const brandLink = user ? (user.role === 'admin' ? '/admin/dashboard' : '/dashboard') : '/';
+
   const scrollToSection = (sectionId) => {
     setMobileMenuOpen(false);
     if (sectionId === 'home') {
+      if (user) {
+        navigate(brandLink);
+        return;
+      }
       if (location.pathname !== '/') {
         navigate('/');
       } else {
@@ -47,7 +53,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo & Name using the official Hackways Logo */}
-          <Link to="/" className="flex items-center gap-3 group shrink-0 mr-4">
+          <Link to={brandLink} className="flex items-center gap-3 group shrink-0 mr-4">
             <img
               src={hackwaysLogo}
               onError={(e) => { e.currentTarget.src = '/hackways-logo.png'; }}
@@ -101,15 +107,25 @@ export default function Navbar() {
           {/* User Auth Buttons / Profile */}
           <div className="hidden md:flex items-center gap-3">
             {user ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg text-xs font-medium">
+              <div className="flex items-center gap-2.5">
+                <Link
+                  to="/dashboard"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-secondary text-primary hover:bg-secondary-hover transition-colors shadow-xs"
+                >
+                  Dashboard
+                </Link>
+
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-2 bg-white/10 hover:bg-white/15 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                >
                   {user.photoURL ? (
                     <img src={user.photoURL} alt={user.name} className="w-4 h-4 rounded-full object-cover" />
                   ) : (
                     <User className="w-3.5 h-3.5 text-secondary" />
                   )}
-                  <span className="text-white max-w-[140px] truncate">{user.name}</span>
-                </div>
+                  <span className="text-white max-w-[130px] truncate">{user.name}</span>
+                </Link>
 
                 <button
                   onClick={handleLogout}
@@ -184,6 +200,13 @@ export default function Navbar() {
                 <div className="text-xs text-white/70 px-3">
                   Signed in as <strong className="text-white">{user.name}</strong> ({user.email})
                 </div>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold bg-secondary text-primary rounded-lg shadow-sm"
+                >
+                  Go to Student Dashboard
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"

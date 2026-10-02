@@ -2,18 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import hackwaysLogo from '../assets/hackways-logo.jpg';
 import {
   Sparkles,
   User,
   Phone,
   School,
   ArrowRight,
+  ArrowLeft,
   Shield,
+  ShieldCheck,
   RefreshCw,
   CheckCircle2,
   Lock,
   Mail,
-  Zap,
+  Trophy,
+  Users,
+  BadgeCheck,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -34,12 +39,16 @@ export default function LoginPage() {
   const [college, setCollege] = useState('');
   const [photoURL, setPhotoURL] = useState('');
 
+  const getDestination = () => {
+    const from = location.state?.from?.pathname;
+    return from && from !== '/' ? from : '/dashboard';
+  };
+
   // Check login state on mount
   useEffect(() => {
     if (user) {
       if (user.phone && user.college) {
-        const from = location.state?.from?.pathname || '/events';
-        navigate(from, { replace: true });
+        navigate(getDestination(), { replace: true });
       } else {
         // User logged in via Google but profile incomplete
         setName(user.name || '');
@@ -60,8 +69,7 @@ export default function LoginPage() {
         const loggedUser = res.user;
         if (res.isProfileComplete || (loggedUser?.phone && loggedUser?.college)) {
           success(`Welcome back, ${loggedUser.name}!`);
-          const from = location.state?.from?.pathname || '/events';
-          navigate(from, { replace: true });
+          navigate(getDestination(), { replace: true });
         } else {
           setName(loggedUser.name || '');
           setEmail(loggedUser.email || '');
@@ -105,9 +113,8 @@ export default function LoginPage() {
       });
 
       if (res.success) {
-        success('Profile saved to Firebase successfully! Welcome to Hackways.');
-        const from = location.state?.from?.pathname || '/events';
-        navigate(from, { replace: true });
+        success('Profile saved successfully! Welcome to Hackways.');
+        navigate(getDestination(), { replace: true });
       }
     } catch (err) {
       console.error('Save Profile Error:', err);
@@ -118,25 +125,55 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
-      <div className="max-w-md w-full space-y-6">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden">
+      {/* Decorative ambient lighting */}
+      <div className="absolute top-1/4 -left-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-secondary/30 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="max-w-md w-full space-y-6 relative z-10">
+        {/* Back navigation */}
+        <div className="flex items-center justify-between">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-accent transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Hackathon</span>
+          </Link>
+          <span className="text-[11px] font-bold text-accent bg-secondary/50 px-2.5 py-1 rounded-md">
+            CIT Abu Road
+          </span>
+        </div>
+
         {/* Brand header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary text-secondary shadow-card mb-2">
-            <Sparkles className="w-6 h-6 text-accent" />
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center p-1 rounded-2xl bg-white shadow-md border border-accent/15 mx-auto">
+            <img
+              src={hackwaysLogo}
+              onError={(e) => { e.currentTarget.src = '/hackways-logo.png'; }}
+              alt="Hackways"
+              className="w-12 h-12 rounded-xl object-contain shadow-xs"
+            />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-dark">
-            {step === 'signin' ? 'Start Registration' : 'Complete Your Profile'}
-          </h1>
-          <p className="text-xs sm:text-sm text-dark-muted">
-            {step === 'signin'
-              ? 'Sign in with your Google account to register your team for CIT Coding Carnival 2026'
-              : 'Save your participant information to register for hackathons & events'}
-          </p>
+
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2">
+              <BadgeCheck className="w-3.5 h-3.5" />
+              CIT Coding Carnival 2026
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">
+              {step === 'signin' ? 'Start Registration' : 'Complete Your Profile'}
+            </h1>
+            <p className="text-xs sm:text-sm text-dark-muted max-w-sm mx-auto mt-1 leading-relaxed">
+              {step === 'signin'
+                ? 'Sign in with your Google account to register your 4-member team.'
+                : 'Save your participant information to finalize your hackathon registration.'}
+            </p>
+          </div>
         </div>
 
         {/* Main Card */}
-        <div className="card bg-white shadow-card border border-accent/20 rounded-2xl p-6 sm:p-8">
+        <div className="bg-white shadow-xl shadow-primary/5 border border-accent/20 rounded-3xl p-6 sm:p-8 transition-all">
           {step === 'signin' ? (
             <div className="space-y-6">
               {/* Direct Google Sign In Button */}
@@ -144,12 +181,12 @@ export default function LoginPage() {
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={googleLoading}
-                className="w-full flex items-center justify-center gap-3.5 py-4 px-5 rounded-xl border border-accent/30 bg-white hover:bg-neutral-50 text-dark font-bold text-sm sm:text-base transition-all shadow-sm hover:shadow-md active:scale-[0.99] disabled:opacity-60 cursor-pointer group"
+                className="w-full flex items-center justify-center gap-3.5 py-3.5 px-5 rounded-xl border-2 border-accent/20 bg-white hover:bg-neutral-50/80 text-dark font-bold text-sm sm:text-base transition-all shadow-xs hover:shadow-md hover:border-accent/40 active:scale-[0.99] disabled:opacity-60 cursor-pointer group"
               >
                 {googleLoading ? (
                   <RefreshCw className="w-5 h-5 animate-spin text-primary" />
                 ) : (
-                  <svg className="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 transition-transform group-hover:scale-110 flex-shrink-0" viewBox="0 0 24 24">
                     <path
                       fill="#4285F4"
                       d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
@@ -171,19 +208,63 @@ export default function LoginPage() {
                 <span>Continue with Google</span>
               </button>
 
-              {/* Simple Benefits / Steps */}
-              <div className="rounded-xl bg-background-cream/60 p-4 border border-accent/15 space-y-2.5">
-                <div className="flex items-center gap-2.5 text-xs text-dark font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>1-click secure Google verification</span>
+              {/* Verified Trust Strip */}
+              <div className="flex items-center gap-3">
+                <div className="h-px bg-accent/15 flex-1" />
+                <span className="text-[10px] font-bold text-accent/70 uppercase tracking-widest">
+                  Event Highlights
+                </span>
+                <div className="h-px bg-accent/15 flex-1" />
+              </div>
+
+              {/* Value Highlight Cards */}
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-background-cream/60 border border-accent/15">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-dark">₹99 Refundable Entry</p>
+                    <p className="text-[11px] text-dark-muted truncate">100% refunded in cash/UPI at event check-in</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2.5 text-xs text-dark font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>Register your team of 4 members</span>
+
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-background-cream/60 border border-accent/15">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-dark">4 Members Per Team</p>
+                    <p className="text-[11px] text-dark-muted truncate">Capped strictly to 70 student teams</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2.5 text-xs text-dark font-medium">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>₹99 refundable entry — 100% refunded at event</span>
+
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-background-cream/60 border border-accent/15">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-dark">₹25,000+ Cash Prizes</p>
+                    <p className="text-[11px] text-dark-muted truncate">Plus verified MSME &amp; CIT certificates for all</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security & Terms Footer */}
+              <div className="pt-2 text-center space-y-2">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-dark-muted">
+                  <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Secure 1-click verification • No passwords stored</span>
+                </div>
+                <div className="text-[10px] text-dark-muted/80">
+                  By continuing, you agree to the{' '}
+                  <Link to="/terms" className="underline hover:text-primary">
+                    Terms
+                  </Link>{' '}
+                  &amp;{' '}
+                  <Link to="/privacy" className="underline hover:text-primary">
+                    Privacy Policy
+                  </Link>.
                 </div>
               </div>
             </div>
@@ -202,11 +283,11 @@ export default function LoginPage() {
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-dark truncate">{name || 'Google User'}</div>
                   <div className="text-[11px] text-dark-muted truncate flex items-center gap-1">
-                    <Mail className="w-3 h-3 text-emerald-600" />
-                    <span>{email}</span>
+                    <Mail className="w-3 h-3 text-emerald-600 shrink-0" />
+                    <span className="truncate">{email}</span>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full shrink-0">
                   Verified
                 </span>
               </div>
@@ -223,7 +304,7 @@ export default function LoginPage() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Alex Johnson"
+                    placeholder="e.g. Rahul Sharma"
                     className="w-full pl-10 pr-4 py-2.5 bg-background-cream text-dark border border-accent/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
@@ -246,13 +327,13 @@ export default function LoginPage() {
                     className="w-full pl-10 pr-4 py-2.5 bg-background-cream text-dark border border-accent/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
                   />
                 </div>
-                <span className="text-[10px] text-dark-muted mt-1 block">Used for team coordination and hackathon updates</span>
+                <span className="text-[10px] text-dark-muted mt-1 block">Used for event WhatsApp group and check-in</span>
               </div>
 
               {/* College / Organization */}
               <div>
                 <label className="block text-xs font-semibold text-dark mb-1.5 uppercase tracking-wide">
-                  College / Organization <span className="text-red-600">*</span>
+                  College / Institute Name <span className="text-red-600">*</span>
                 </label>
                 <div className="relative flex items-center">
                   <School className="w-4 h-4 text-dark-muted absolute left-3.5 pointer-events-none" />
@@ -261,7 +342,7 @@ export default function LoginPage() {
                     required
                     value={college}
                     onChange={(e) => setCollege(e.target.value)}
-                    placeholder="e.g. MIT, Stanford, IIT Delhi, or Company"
+                    placeholder="e.g. Chartered Institute of Technology (CIT)"
                     className="w-full pl-10 pr-4 py-2.5 bg-background-cream text-dark border border-accent/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                 </div>
@@ -276,11 +357,11 @@ export default function LoginPage() {
                 {savingProfile ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Saving to Firebase...</span>
+                    <span>Saving Profile...</span>
                   </>
                 ) : (
                   <>
-                    <span>Save & Continue to Events</span>
+                    <span>Save &amp; Continue</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -292,3 +373,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
