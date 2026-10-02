@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import citLogo from '../assets/cit-logo.png';
+import msmeLogo from '../assets/msme-logo.svg';
 import {
   Trophy,
   Users,
@@ -37,7 +39,8 @@ const PARTNERS = [
     name: 'Chartered Institute of Technology',
     logo: (
       <img
-        src="/cit-logo.png"
+        src={citLogo}
+        onError={(e) => { e.currentTarget.src = '/cit-logo.png'; }}
         alt="Chartered Institute of Technology (CIT)"
         className="h-11 sm:h-13 w-auto object-contain filter drop-shadow-[0_2px_8px_rgba(255,255,255,0.2)] brightness-110 contrast-105"
       />
@@ -916,7 +919,8 @@ export default function LandingPage() {
             {/* 1. MSME Govt Certified Card (Same size as CIT) */}
             <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-accent/15 shadow-card flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
               <img
-                src="/msme-logo.svg"
+                src={msmeLogo}
+                onError={(e) => { e.currentTarget.src = '/msme-logo.svg'; }}
                 alt="Ministry of MSME, Govt. of India"
                 className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24 object-contain filter drop-shadow shrink-0"
               />
@@ -935,7 +939,8 @@ export default function LandingPage() {
             {/* 2. CIT Card */}
             <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-accent/15 shadow-card flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
               <img
-                src="/cit-logo.png"
+                src={citLogo}
+                onError={(e) => { e.currentTarget.src = '/cit-logo.png'; }}
                 alt="Chartered Institute of Technology"
                 className="h-16 w-auto sm:h-20 md:h-24 object-contain filter drop-shadow shrink-0"
               />

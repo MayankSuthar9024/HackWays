@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Shield, Menu, X, User } from 'lucide-react';
+import hackwaysLogo from '../assets/hackways-logo.jpg';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -48,7 +49,8 @@ export default function Navbar() {
           {/* Brand Logo & Name using the official Hackways Logo */}
           <Link to="/" className="flex items-center gap-3 group shrink-0 mr-4">
             <img
-              src="/hackways-logo.jpg"
+              src={hackwaysLogo}
+              onError={(e) => { e.currentTarget.src = '/hackways-logo.png'; }}
               alt="Hackways"
               className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-contain shadow-sm border border-white/20 transition-transform group-hover:scale-105"
             />
