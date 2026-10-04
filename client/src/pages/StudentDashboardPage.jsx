@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import api from '../services/api';
 import hackwaysLogo from '../assets/hackways-logo.jpg';
+import UserDetailsModal from '../components/UserDetailsModal';
 import {
   Users,
   FileText,
@@ -57,6 +58,21 @@ export default function StudentDashboardPage() {
 
   // Active View / Tab: 'team' | 'ps' | 'solution' | 'prototype' | 'results'
   const activeTab = searchParams.get('tab') || 'team';
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (user && !isSuper) {
+      const isComplete = Boolean(
+        user.name &&
+        user.phone &&
+        (user.institute || user.college) &&
+        user.year
+      );
+      if (!isComplete) {
+        setProfileModalOpen(true);
+      }
+    }
+  }, [user, isSuper]);
   const setActiveTab = (tab) => {
     setSearchParams({ tab });
     setSidebarOpen(false);
@@ -1188,6 +1204,16 @@ export default function StudentDashboardPage() {
           </div>
         )}
       </main>
+
+      {/* Profile Details Modal */}
+      <UserDetailsModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onSaved={() => {
+          setProfileModalOpen(false);
+          loadDashboardData();
+        }}
+      />
     </div>
   );
 }

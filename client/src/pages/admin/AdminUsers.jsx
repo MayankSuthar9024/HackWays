@@ -51,12 +51,13 @@ export default function AdminUsers() {
       return;
     }
 
-    const headers = ['Full Name', 'Email', 'Phone', 'College / Org', 'Event Title', 'Team Name', 'Registered Date'];
+    const headers = ['Full Name', 'Email', 'Phone', 'College / Org', 'Year', 'Event Title', 'Team Name', 'Registered Date'];
     const rows = users.map((r) => [
       `"${r.user?.name || ''}"`,
       `"${r.user?.email || ''}"`,
       `"${r.user?.phone || ''}"`,
-      `"${r.collegeOrOrg || r.user?.college || ''}"`,
+      `"${r.collegeOrOrg || r.user?.college || r.user?.institute || ''}"`,
+      `"${r.user?.year || ''}"`,
       `"${r.event?.title || ''}"`,
       `"${r.teamName || ''}"`,
       `"${new Date(r.registeredAt).toLocaleString()}"`,
@@ -147,7 +148,12 @@ export default function AdminUsers() {
                       {reg.user?.phone || 'N/A'}
                     </td>
                     <td className="py-4 px-4 text-dark-muted">
-                      {reg.collegeOrOrg || reg.user?.college || '—'}
+                      <div>{reg.collegeOrOrg || reg.user?.college || reg.user?.institute || '—'}</div>
+                      {reg.user?.year && (
+                        <span className="inline-block px-2 py-0.5 rounded-md bg-secondary/50 text-[10px] font-bold text-accent mt-0.5">
+                          {reg.user.year}
+                        </span>
+                      )}
                     </td>
                     <td className="py-4 px-4 space-y-0.5">
                       <div className="font-bold text-primary truncate max-w-xs">{reg.event?.title}</div>

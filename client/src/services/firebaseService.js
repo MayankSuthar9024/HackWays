@@ -731,7 +731,7 @@ export const authService = {
     }
 
     const token = `token_google_${user.id}_${Date.now()}`;
-    const isProfileComplete = isSuperAdmin || Boolean(user.phone && user.college);
+    const isProfileComplete = isSuperAdmin || Boolean(user.phone && (user.college || user.institute) && user.year);
     return {
       success: true,
       message: isSuperAdmin ? 'Welcome, Super Admin!' : 'Signed in with Google successfully!',
@@ -743,7 +743,7 @@ export const authService = {
     };
   },
 
-  async completeProfile({ name, phone, college }) {
+  async completeProfile({ name, email, phone, college, institute, year }) {
     const storedUserStr = localStorage.getItem('org_user');
     if (!storedUserStr) {
       const err = new Error('You must be logged in to update your profile.');
@@ -753,13 +753,17 @@ export const authService = {
 
     const storedUser = JSON.parse(storedUserStr);
     const userId = storedUser.id || storedUser._id;
-    const cleanEmail = storedUser.email?.toLowerCase().trim() || '';
+    const cleanEmail = (email || storedUser.email)?.toLowerCase().trim() || '';
     const isSuper = isSuperAdminEmail(cleanEmail);
+    const resolvedInstitute = (institute || college || storedUser.college || storedUser.institute || '').trim();
 
     const updatedData = {
       name: name?.trim() || storedUser.name,
+      email: cleanEmail,
       phone: phone?.trim() || '',
-      college: college?.trim() || '',
+      college: resolvedInstitute,
+      institute: resolvedInstitute,
+      year: year?.trim() || storedUser.year || '',
       role: isSuper ? 'superadmin' : (storedUser.role || 'user'),
       isProfileComplete: true,
       updatedAt: new Date().toISOString(),

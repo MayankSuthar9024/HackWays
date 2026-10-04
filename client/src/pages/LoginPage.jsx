@@ -3,41 +3,29 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth, isSuperAdmin } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import hackwaysLogo from '../assets/hackways-logo.jpg';
+import UserDetailsModal from '../components/UserDetailsModal';
 import {
-  Sparkles,
   User,
-  Phone,
-  School,
   ArrowRight,
   ArrowLeft,
-  Shield,
   ShieldCheck,
   RefreshCw,
-  CheckCircle2,
   Lock,
-  Mail,
   Trophy,
   Users,
   BadgeCheck,
+  LogOut,
 } from 'lucide-react';
 
 export default function LoginPage() {
-  const { user, loginWithGoogle, completeProfile } = useAuth();
-  const { success, error: showError, info } = useToast();
+  const { user, loginWithGoogle, logout } = useAuth();
+  const { error: showError, info } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 'signin' | 'complete_profile'
-  const [step, setStep] = useState('signin');
+  // Popup Modal visibility
+  const [showModal, setShowModal] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [savingProfile, setSavingProfile] = useState(false);
-
-  // Form fields for profile completion
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [college, setCollege] = useState('');
-  const [photoURL, setPhotoURL] = useState('');
 
   const getDestination = (targetUser) => {
     const checkUser = targetUser || user;
@@ -48,43 +36,30 @@ export default function LoginPage() {
     return from && from !== '/' && !from.includes('/login') ? from : '/dashboard';
   };
 
-  // Check login state on mount
+  // Check login state on mount - if profile incomplete, automatically show popup modal!
   useEffect(() => {
     if (user) {
-      const isSuper = isSuperAdmin(user.email) || user.role === 'superadmin' || user.role === 'admin';
-      if (isSuper || (user.phone && user.college)) {
-        navigate(getDestination(user), { replace: true });
-      } else {
-        // User logged in via Google but profile incomplete
-        setName(user.name || '');
-        setEmail(user.email || '');
-        setPhone(user.phone || '');
-        setCollege(user.college || '');
-        setPhotoURL(user.photoURL || '');
-        setStep('complete_profile');
+      const isComplete = Boolean(
+        user.name &&
+        user.phone &&
+        (user.institute || user.college) &&
+        user.year
+      );
+
+      if (!isComplete) {
+        setShowModal(true);
       }
     }
-  }, [user, navigate, location]);
+  }, [user]);
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
       const res = await loginWithGoogle();
       if (res.success) {
-        const loggedUser = res.user;
-        const isSuper = isSuperAdmin(loggedUser?.email) || loggedUser?.role === 'superadmin' || loggedUser?.role === 'admin';
-        if (isSuper || res.isProfileComplete || (loggedUser?.phone && loggedUser?.college)) {
-          success(`Welcome back, ${loggedUser.name}!`);
-          navigate(getDestination(loggedUser), { replace: true });
-        } else {
-          setName(loggedUser.name || '');
-          setEmail(loggedUser.email || '');
-          setPhone(loggedUser.phone || '');
-          setCollege(loggedUser.college || '');
-          setPhotoURL(loggedUser.photoURL || '');
-          setStep('complete_profile');
-          info('Please complete your profile to continue.');
-        }
+        // ALWAYS show the details popup modal immediately after login!
+        setShowModal(true);
+        info('Please fill in your details to finalize registration.');
       }
     } catch (err) {
       console.error('Google Sign-In Error:', err);
@@ -94,41 +69,9 @@ export default function LoginPage() {
     }
   };
 
-  const handleSaveProfile = async (e) => {
-    e.preventDefault();
-
-    if (!name.trim()) {
-      showError('Please enter your full name.');
-      return;
-    }
-    if (!phone || !/^[0-9]{10}$/.test(phone.trim())) {
-      showError('Please enter a valid 10-digit mobile number.');
-      return;
-    }
-    if (!college.trim()) {
-      showError('Please enter your college or organization name.');
-      return;
-    }
-
-    setSavingProfile(true);
-    try {
-      const res = await completeProfile({
-        name: name.trim(),
-        phone: phone.trim(),
-        college: college.trim(),
-      });
-
-      if (res.success) {
-        success('Profile saved successfully! Welcome to Hackways.');
-        const updatedUser = res.user || user;
-        navigate(getDestination(updatedUser), { replace: true });
-      }
-    } catch (err) {
-      console.error('Save Profile Error:', err);
-      showError(err.message || 'Failed to save profile. Please try again.');
-    } finally {
-      setSavingProfile(false);
-    }
+  const handleProfileSaved = (updatedUser) => {
+    setShowModal(false);
+    navigate(getDestination(updatedUser), { replace: true });
   };
 
   return (
@@ -139,7 +82,7 @@ export default function LoginPage() {
 
       <div className="max-w-md w-full space-y-6 relative z-10">
         {/* Back navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-accent transition-colors"
@@ -147,9 +90,6 @@ export default function LoginPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Hackathon</span>
           </Link>
-          <span className="text-[11px] font-bold text-accent bg-secondary/50 px-2.5 py-1 rounded-md">
-            CIT Abu Road
-          </span>
         </div>
 
         {/* Brand header */}
@@ -169,21 +109,74 @@ export default function LoginPage() {
               CIT Coding Carnival 2026
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary">
-              {step === 'signin' ? 'Start Registration' : 'Complete Your Profile'}
+              Start Registration
             </h1>
-            <p className="text-xs sm:text-sm text-dark-muted max-w-sm mx-auto mt-1 leading-relaxed">
-              {step === 'signin'
-                ? 'Sign in with your Google account to register your 4-member team.'
-                : 'Save your participant information to finalize your hackathon registration.'}
-            </p>
           </div>
         </div>
 
         {/* Main Card */}
         <div className="bg-white shadow-xl shadow-primary/5 border border-accent/20 rounded-3xl p-6 sm:p-8 transition-all">
-          {step === 'signin' ? (
-            <div className="space-y-6">
-              {/* Direct Google Sign In Button */}
+          <div className="space-y-6">
+            {user ? (
+              /* If user is already authenticated */
+              <div className="space-y-4">
+                <div className="p-3.5 rounded-2xl bg-primary/5 border border-primary/15 flex items-center gap-3">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.name} className="w-11 h-11 rounded-full object-cover border border-primary/20 shrink-0" />
+                  ) : (
+                    <div className="w-11 h-11 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
+                      <User className="w-5 h-5" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-dark truncate">{user.name || 'User'}</p>
+                    <p className="text-[11px] text-dark-muted truncate">{user.email}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
+                        Signed In
+                      </span>
+                      {user.year && (
+                        <span className="text-[10px] font-semibold text-accent bg-secondary/40 px-2 py-0.5 rounded-md">
+                          {user.year}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(true)}
+                    className="w-full py-3 px-3 rounded-xl border-2 border-primary/20 hover:border-primary bg-primary/5 text-primary font-bold text-xs sm:text-sm transition-all text-center cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Enter Details</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate(getDestination(user))}
+                    className="w-full btn-primary py-3 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all text-center cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <span>Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="text-center pt-1">
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className="inline-flex items-center gap-1.5 text-xs text-dark-muted hover:text-red-600 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign out / Switch account</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Direct Google Sign In Button */
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
@@ -214,170 +207,71 @@ export default function LoginPage() {
                 )}
                 <span>Continue with Google</span>
               </button>
+            )}
 
-              {/* Verified Trust Strip */}
-              <div className="flex items-center gap-3">
-                <div className="h-px bg-accent/15 flex-1" />
-                <span className="text-[10px] font-bold text-accent/70 uppercase tracking-widest">
-                  Event Highlights
-                </span>
-                <div className="h-px bg-accent/15 flex-1" />
+            {/* Verified Trust Strip */}
+            <div className="flex items-center gap-3">
+              <div className="h-px bg-accent/15 flex-1" />
+              <span className="text-[10px] font-bold text-accent/70 uppercase tracking-widest">
+                Event Highlights
+              </span>
+              <div className="h-px bg-accent/15 flex-1" />
+            </div>
+
+            {/* Value Highlight Cards - Compact */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="flex flex-col items-center text-center p-2.5 rounded-xl bg-background-cream/60 border border-accent/15">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mb-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[11px] font-bold text-dark leading-tight">₹99 Entry</span>
+                <span className="text-[10px] text-dark-muted leading-tight mt-0.5">100% Refundable</span>
               </div>
 
-              {/* Value Highlight Cards */}
-              <div className="space-y-2.5">
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-background-cream/60 border border-accent/15">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <ShieldCheck className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-dark">₹99 Refundable Entry</p>
-                    <p className="text-[11px] text-dark-muted truncate">100% refunded in cash/UPI at event check-in</p>
-                  </div>
+              <div className="flex flex-col items-center text-center p-2.5 rounded-xl bg-background-cream/60 border border-accent/15">
+                <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mb-1.5">
+                  <Users className="w-3.5 h-3.5" />
                 </div>
-
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-background-cream/60 border border-accent/15">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-dark">4 Members Per Team</p>
-                    <p className="text-[11px] text-dark-muted truncate">Capped strictly to 70 student teams</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-background-cream/60 border border-accent/15">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                    <Trophy className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-dark">₹25,000+ Cash Prizes</p>
-                    <p className="text-[11px] text-dark-muted truncate">Plus verified MSME &amp; CIT certificates for all</p>
-                  </div>
-                </div>
+                <span className="text-[11px] font-bold text-dark leading-tight">4 Members</span>
+                <span className="text-[10px] text-dark-muted leading-tight mt-0.5">Per Team</span>
               </div>
 
-              {/* Security & Terms Footer */}
-              <div className="pt-2 text-center space-y-2">
-                <div className="flex items-center justify-center gap-1.5 text-[11px] text-dark-muted">
-                  <Lock className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Secure 1-click verification • No passwords stored</span>
+              <div className="flex flex-col items-center text-center p-2.5 rounded-xl bg-background-cream/60 border border-accent/15">
+                <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mb-1.5">
+                  <Trophy className="w-3.5 h-3.5" />
                 </div>
-                <div className="text-[10px] text-dark-muted/80">
-                  By continuing, you agree to the{' '}
-                  <Link to="/terms" className="underline hover:text-primary">
-                    Terms
-                  </Link>{' '}
-                  &amp;{' '}
-                  <Link to="/privacy" className="underline hover:text-primary">
-                    Privacy Policy
-                  </Link>.
-                </div>
+                <span className="text-[11px] font-bold text-dark leading-tight">₹25,000+</span>
+                <span className="text-[10px] text-dark-muted leading-tight mt-0.5">Cash Prizes</span>
               </div>
             </div>
-          ) : (
-            /* Step 2: Complete Profile Data */
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              {/* User preview header */}
-              <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
-                {photoURL ? (
-                  <img src={photoURL} alt={name} className="w-10 h-10 rounded-full object-cover border border-primary/20" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-                    <User className="w-5 h-5" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-bold text-dark truncate">{name || 'Google User'}</div>
-                  <div className="text-[11px] text-dark-muted truncate flex items-center gap-1">
-                    <Mail className="w-3 h-3 text-emerald-600 shrink-0" />
-                    <span className="truncate">{email}</span>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full shrink-0">
-                  Verified
-                </span>
-              </div>
 
-              {/* Full Name */}
-              <div>
-                <label className="block text-xs font-semibold text-dark mb-1.5 uppercase tracking-wide">
-                  Full Name <span className="text-red-600">*</span>
-                </label>
-                <div className="relative flex items-center">
-                  <User className="w-4 h-4 text-dark-muted absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Rahul Sharma"
-                    className="w-full pl-10 pr-4 py-2.5 bg-background-cream text-dark border border-accent/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
-                </div>
+            {/* Security & Terms Footer */}
+            <div className="pt-2 text-center space-y-2">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-dark-muted">
+                <Lock className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Secure 1-click verification • No passwords stored</span>
               </div>
-
-              {/* Phone Number */}
-              <div>
-                <label className="block text-xs font-semibold text-dark mb-1.5 uppercase tracking-wide">
-                  Mobile Number <span className="text-red-600">*</span>
-                </label>
-                <div className="relative flex items-center">
-                  <Phone className="w-4 h-4 text-dark-muted absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="tel"
-                    required
-                    maxLength={10}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    placeholder="10-digit mobile number"
-                    className="w-full pl-10 pr-4 py-2.5 bg-background-cream text-dark border border-accent/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-mono"
-                  />
-                </div>
-                <span className="text-[10px] text-dark-muted mt-1 block">Used for event WhatsApp group and check-in</span>
+              <div className="text-[10px] text-dark-muted/80">
+                By continuing, you agree to the{' '}
+                <Link to="/terms" className="underline hover:text-primary">
+                  Terms
+                </Link>{' '}
+                &amp;{' '}
+                <Link to="/privacy" className="underline hover:text-primary">
+                  Privacy Policy
+                </Link>.
               </div>
-
-              {/* College / Organization */}
-              <div>
-                <label className="block text-xs font-semibold text-dark mb-1.5 uppercase tracking-wide">
-                  College / Institute Name <span className="text-red-600">*</span>
-                </label>
-                <div className="relative flex items-center">
-                  <School className="w-4 h-4 text-dark-muted absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="text"
-                    required
-                    value={college}
-                    onChange={(e) => setCollege(e.target.value)}
-                    placeholder="e.g. Chartered Institute of Technology (CIT)"
-                    className="w-full pl-10 pr-4 py-2.5 bg-background-cream text-dark border border-accent/20 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={savingProfile}
-                className="w-full btn-primary py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all mt-2 disabled:opacity-60 cursor-pointer"
-              >
-                {savingProfile ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Saving Profile...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Save &amp; Continue</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* User Details Modal Popup */}
+      <UserDetailsModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSaved={handleProfileSaved}
+      />
     </div>
   );
 }
-
