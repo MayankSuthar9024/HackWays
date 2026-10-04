@@ -59,12 +59,6 @@ function RootRoute() {
 }
 
 function LoginRoute() {
-  const { user, isAdmin } = useAuth();
-
-  if (user) {
-    return <Navigate to={isAdmin ? '/admin/dashboard' : '/dashboard'} replace />;
-  }
-
   return (
     <PublicLayout>
       <LoginPage />

@@ -41,7 +41,7 @@ export default function AdminLayout() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+    <div className="min-h-screen md:h-screen md:overflow-hidden bg-background flex flex-col md:flex-row">
       {/* Mobile Top Navbar */}
       <div className="md:hidden bg-primary text-white px-4 py-3 flex items-center justify-between shadow-soft">
         <div className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export default function AdminLayout() {
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-primary text-white flex flex-col justify-between transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-primary text-white flex flex-col justify-between transition-transform duration-200 ease-in-out md:sticky md:top-0 md:h-full md:translate-x-0 md:overflow-y-auto shrink-0 shadow-lg ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -141,7 +141,7 @@ export default function AdminLayout() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-8 lg:p-10 max-w-7xl overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-8 lg:p-10 max-w-7xl md:h-full overflow-y-auto">
         <Outlet />
       </main>
     </div>
