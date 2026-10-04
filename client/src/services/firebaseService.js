@@ -162,9 +162,9 @@ Organized by Hackways, an MSME Certified Organization, in association with Chart
           'Open-source frameworks and public APIs are permitted with attribution.',
         ],
         prizes: [
-          { position: '1st Place Winner', amount: '₹15,000', perks: 'Cash Prize + Champion Trophy + Goodies' },
-          { position: '2nd Place Runner-Up', amount: '₹7,000', perks: 'Cash Prize + Runner-Up Trophy' },
-          { position: '3rd Place Innovation', amount: '₹3,000', perks: 'Cash Prize + Merit Recognition' },
+          { position: '1st Place Winner', amount: '₹12,000', perks: 'Cash Prize + Champion Trophy + Goodies' },
+          { position: '2nd Place Runner-Up', amount: '₹8,000', perks: 'Cash Prize + Runner-Up Trophy' },
+          { position: '3rd Place Innovation', amount: '₹5,000', perks: 'Cash Prize + Merit Recognition' },
         ],
         schedule: {
           psReleaseTime: new Date(now - 1 * DAY).toISOString(),
@@ -685,20 +685,34 @@ export const authService = {
     const userId = gUser.uid;
     const isSuperAdmin = isSuperAdminEmail(cleanEmail);
 
-    const usersObj = (await readPath('users')) || {};
-    let existingUser = Object.values(usersObj).find(
-      (u) => u.email?.toLowerCase() === cleanEmail || u.id === userId || u._id === userId
-    );
+    // 1. First directly read users/${userId} (cloud permission allows auth.uid == $uid)
+    let existingUser = await readPath(`users/${userId}`);
+
+    // 2. Fallback: check local cache by email or UID
+    if (!existingUser) {
+      const localStore = getLocalStore();
+      const usersObj = localStore?.users || {};
+      existingUser = Object.values(usersObj).find(
+        (u) => (cleanEmail && u.email?.toLowerCase() === cleanEmail) || u.id === userId || u._id === userId
+      );
+    }
 
     let user;
     if (existingUser) {
       user = {
         ...existingUser,
+        id: userId,
+        _id: userId,
         name: existingUser.name || gUser.displayName || 'Participant',
+        email: cleanEmail,
+        phone: existingUser.phone || '',
+        college: existingUser.college || existingUser.institute || (isSuperAdmin ? 'CIT Abu Road' : ''),
+        institute: existingUser.institute || existingUser.college || (isSuperAdmin ? 'CIT Abu Road' : ''),
+        year: existingUser.year || (isSuperAdmin ? 'Faculty / Admin' : ''),
         photoURL: gUser.photoURL || existingUser.photoURL || '',
         role: isSuperAdmin ? 'superadmin' : (existingUser.role || 'user'),
       };
-      await updatePath(`users/${existingUser.id || existingUser._id}`, user);
+      await updatePath(`users/${userId}`, user);
     } else {
       user = {
         id: userId,
@@ -707,6 +721,8 @@ export const authService = {
         email: cleanEmail,
         phone: gUser.phoneNumber || '',
         college: isSuperAdmin ? 'CIT Abu Road' : '',
+        institute: isSuperAdmin ? 'CIT Abu Road' : '',
+        year: isSuperAdmin ? 'Faculty / Admin' : '',
         photoURL: gUser.photoURL || '',
         role: isSuperAdmin ? 'superadmin' : 'user',
         isVerified: true,
@@ -714,6 +730,12 @@ export const authService = {
       };
       await writePath(`users/${userId}`, user);
     }
+
+    // Always cache user in localStore
+    const localStore = getLocalStore() || ensureLocalStoreInitialized();
+    if (!localStore.users) localStore.users = {};
+    localStore.users[userId] = user;
+    setLocalStore(localStore);
 
     // Persist superadmin record into admins table
     if (isSuperAdmin) {
@@ -731,7 +753,15 @@ export const authService = {
     }
 
     const token = `token_google_${user.id}_${Date.now()}`;
-    const isProfileComplete = isSuperAdmin || Boolean(user.phone && (user.college || user.institute) && user.year);
+    const isProfileComplete =
+      isSuperAdmin ||
+      Boolean(
+        user.name &&
+        user.phone &&
+        (user.college || user.institute) &&
+        user.year
+      );
+
     return {
       success: true,
       message: isSuperAdmin ? 'Welcome, Super Admin!' : 'Signed in with Google successfully!',
@@ -760,7 +790,7 @@ export const authService = {
     const updatedData = {
       name: name?.trim() || storedUser.name,
       email: cleanEmail,
-      phone: phone?.trim() || '',
+      phone: phone?.trim() || storedUser.phone || '',
       college: resolvedInstitute,
       institute: resolvedInstitute,
       year: year?.trim() || storedUser.year || '',
@@ -784,9 +814,17 @@ export const authService = {
     const updatedUser = {
       ...storedUser,
       ...updatedData,
+      id: userId,
+      _id: userId,
     };
 
+    // Cache updated profile in both localStorage and localStore
     localStorage.setItem('org_user', JSON.stringify(updatedUser));
+    const localStore = getLocalStore() || ensureLocalStoreInitialized();
+    if (!localStore.users) localStore.users = {};
+    localStore.users[userId] = updatedUser;
+    setLocalStore(localStore);
+
     return {
       success: true,
       message: 'Profile completed successfully!',
@@ -864,22 +902,55 @@ export const eventService = {
     if (storedUserStr) {
       try {
         const user = JSON.parse(storedUserStr);
-        const regKey = `${user.id || user._id}_${eventId}`;
-        const reg = await readPath(`registrations/${regKey}`);
+        const userId = user.id || user._id;
+        const cleanEmail = user.email?.toLowerCase().trim() || '';
+        const regKey = `${userId}_${eventId}`;
+
+        // 1. Direct cloud read (allowed by rules: $regId.contains(auth.uid))
+        let reg = await readPath(`registrations/${regKey}`);
+
+        // 2. Fallback: check local store cache by regKey, userId, or email
+        if (!reg) {
+          const localStore = getLocalStore();
+          const allRegs = localStore?.registrations || {};
+          reg =
+            allRegs[regKey] ||
+            Object.values(allRegs).find(
+              (r) =>
+                (r.eventId === eventId || !r.eventId) &&
+                (r.userId === userId ||
+                  r.userId === cleanEmail ||
+                  (cleanEmail && r.leaderEmail?.toLowerCase() === cleanEmail) ||
+                  (r.teamMembers && r.teamMembers.some((m) => m.email?.toLowerCase() === cleanEmail)))
+            );
+        }
+
         if (reg) {
           isRegistered = true;
           registrationDetails = reg;
         }
 
-        const idea = await readPath(`idea_submissions/${regKey}`);
-        if (idea) {
-          userIdeaSubmission = idea;
+        let idea = await readPath(`idea_submissions/${regKey}`);
+        if (!idea) {
+          const localStore = getLocalStore();
+          idea =
+            localStore?.idea_submissions?.[regKey] ||
+            Object.values(localStore?.idea_submissions || {}).find(
+              (i) => i.userId === userId || (cleanEmail && i.userEmail?.toLowerCase() === cleanEmail)
+            );
         }
+        if (idea) userIdeaSubmission = idea;
 
-        const proto = await readPath(`prototype_submissions/${regKey}`);
-        if (proto) {
-          userPrototypeSubmission = proto;
+        let proto = await readPath(`prototype_submissions/${regKey}`);
+        if (!proto) {
+          const localStore = getLocalStore();
+          proto =
+            localStore?.prototype_submissions?.[regKey] ||
+            Object.values(localStore?.prototype_submissions || {}).find(
+              (p) => p.userId === userId || (cleanEmail && p.userEmail?.toLowerCase() === cleanEmail)
+            );
         }
+        if (proto) userPrototypeSubmission = proto;
       } catch (e) {
         console.warn('Error reading user context for event detail:', e);
       }
@@ -912,6 +983,7 @@ export const eventService = {
     }
     const user = JSON.parse(storedUserStr);
     const userId = user.id || user._id;
+    const cleanEmail = user.email?.toLowerCase().trim() || '';
     const regKey = `${userId}_${eventId}`;
 
     const existing = await readPath(`registrations/${regKey}`);
@@ -923,11 +995,12 @@ export const eventService = {
       id: regKey,
       _id: regKey,
       userId,
+      userUid: userId,
       eventId,
       teamName: payload.teamName || '',
-      collegeOrOrg: payload.collegeOrOrg || user.college || '',
+      collegeOrOrg: payload.collegeOrOrg || user.college || user.institute || '',
       leaderName: user.name || payload.leaderName || '',
-      leaderEmail: user.email || payload.leaderEmail || '',
+      leaderEmail: cleanEmail || payload.leaderEmail || '',
       phone: payload.phone || user.phone || '',
       teamMembers: payload.teamMembers || [],
       trackPreference: payload.trackPreference || '',
@@ -936,6 +1009,12 @@ export const eventService = {
     };
 
     await writePath(`registrations/${regKey}`, registration);
+
+    // Explicitly cache in localStore as well
+    const localStore = getLocalStore() || ensureLocalStoreInitialized();
+    if (!localStore.registrations) localStore.registrations = {};
+    localStore.registrations[regKey] = registration;
+    setLocalStore(localStore);
 
     return {
       success: true,
@@ -950,25 +1029,40 @@ export const eventService = {
     if (!storedUserStr) return { success: true, registrations: [] };
     const user = JSON.parse(storedUserStr);
     const userId = user.id || user._id;
+    const cleanEmail = user.email?.toLowerCase().trim() || '';
 
-    const allRegs = (await readPath('registrations')) || {};
+    // Direct read for event_1
+    const regKey = `${userId}_event_1`;
+    let userReg = await readPath(`registrations/${regKey}`);
+
+    const localStore = getLocalStore();
+    const allRegs = localStore?.registrations || {};
+    if (!userReg) {
+      userReg =
+        allRegs[regKey] ||
+        Object.values(allRegs).find(
+          (r) =>
+            r.userId === userId ||
+            (cleanEmail && r.leaderEmail?.toLowerCase() === cleanEmail) ||
+            (r.teamMembers && r.teamMembers.some((m) => m.email?.toLowerCase() === cleanEmail))
+        );
+    }
+
     const eventsObj = (await readPath('events')) || {};
-
-    const userRegs = Object.values(allRegs)
-      .filter((r) => r.userId === userId)
-      .map((r) => {
-        const ev = eventsObj[r.eventId] || {};
-        return {
-          ...r,
-          event: {
-            ...ev,
-            id: ev.id || r.eventId,
-            _id: ev._id || r.eventId,
-          },
-        };
+    const registrations = [];
+    if (userReg) {
+      const ev = eventsObj[userReg.eventId || 'event_1'] || {};
+      registrations.push({
+        ...userReg,
+        event: {
+          ...ev,
+          id: ev.id || userReg.eventId || 'event_1',
+          _id: ev._id || userReg.eventId || 'event_1',
+        },
       });
+    }
 
-    return { success: true, count: userRegs.length, registrations: userRegs };
+    return { success: true, count: registrations.length, registrations };
   },
 
   async createEvent(formData) {

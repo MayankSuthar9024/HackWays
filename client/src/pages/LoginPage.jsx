@@ -36,7 +36,7 @@ export default function LoginPage() {
     return from && from !== '/' && !from.includes('/login') ? from : '/dashboard';
   };
 
-  // Check login state on mount - if profile incomplete, automatically show popup modal!
+  // If user is already logged in with complete profile, redirect to dashboard immediately
   useEffect(() => {
     if (user) {
       const isComplete = Boolean(
@@ -46,7 +46,9 @@ export default function LoginPage() {
         user.year
       );
 
-      if (!isComplete) {
+      if (isComplete || isSuperAdmin(user.email)) {
+        navigate(getDestination(user), { replace: true });
+      } else {
         setShowModal(true);
       }
     }
@@ -57,9 +59,22 @@ export default function LoginPage() {
     try {
       const res = await loginWithGoogle();
       if (res.success) {
-        // ALWAYS show the details popup modal immediately after login!
-        setShowModal(true);
-        info('Please fill in your details to finalize registration.');
+        const u = res.user;
+        const isComplete = Boolean(
+          u &&
+          u.name &&
+          u.phone &&
+          (u.institute || u.college) &&
+          u.year
+        );
+
+        if (!isComplete && !res.isAdmin) {
+          setShowModal(true);
+          info('Please complete your details to continue.');
+        } else {
+          success(res.message || 'Welcome back!');
+          navigate(getDestination(u), { replace: true });
+        }
       }
     } catch (err) {
       console.error('Google Sign-In Error:', err);

@@ -17,7 +17,6 @@ import {
   ExternalLink,
   RefreshCw,
   Send,
-  Sparkles,
   Building,
   Phone,
   Mail,
@@ -33,6 +32,7 @@ import {
   Globe,
   Video,
   Award,
+  Info,
 } from 'lucide-react';
 
 const EVENT_ID = 'event_1';
@@ -56,8 +56,8 @@ export default function StudentDashboardPage() {
     }
   }, [isSuper, isPreview, navigate]);
 
-  // Active View / Tab: 'team' | 'ps' | 'solution' | 'prototype' | 'results'
-  const activeTab = searchParams.get('tab') || 'team';
+  // Active View / Tab: 'details' | 'team' | 'ps' | 'solution' | 'prototype' | 'results'
+  const activeTab = searchParams.get('tab') || 'details';
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   useEffect(() => {
@@ -70,6 +70,8 @@ export default function StudentDashboardPage() {
       );
       if (!isComplete) {
         setProfileModalOpen(true);
+      } else {
+        setProfileModalOpen(false);
       }
     }
   }, [user, isSuper]);
@@ -133,7 +135,20 @@ export default function StudentDashboardPage() {
       const evtRes = await api.get(`/events/${EVENT_ID}`);
       if (evtRes.data?.success) {
         setEventData(evtRes.data.event);
-        const reg = evtRes.data.registration || evtRes.data.registrationDetails || evtRes.data.userState?.registration;
+        let reg = evtRes.data.registration || evtRes.data.registrationDetails || evtRes.data.userState?.registration;
+        if (!reg) {
+          try {
+            const myEvtsRes = await api.get('/events/user/my-events');
+            if (myEvtsRes.data?.success && myEvtsRes.data.registrations?.length > 0) {
+              reg =
+                myEvtsRes.data.registrations.find(
+                  (r) => r.eventId === EVENT_ID || r.event?.id === EVENT_ID
+                ) || myEvtsRes.data.registrations[0];
+            }
+          } catch (e) {
+            console.warn('Fallback my-events fetch notice:', e);
+          }
+        }
         if (reg) {
           setRegistration(reg);
           if (reg.teamName) setTeamName(reg.teamName);
@@ -319,44 +334,39 @@ export default function StudentDashboardPage() {
   // Menu items in Admin Dashboard format
   const menuItems = [
     {
+      id: 'details',
+      label: 'Hackathon Details',
+      icon: Info,
+    },
+    {
       id: 'team',
       label: 'Team Registration',
       icon: Users,
-      badge: registration ? 'Confirmed' : 'Pending',
-      badgeColor: registration ? 'bg-emerald-400/20 text-emerald-300' : 'bg-amber-400/20 text-amber-300',
     },
     {
       id: 'ps',
       label: 'PS Visible',
       icon: FileText,
-      badge: `${problemStatements.length} Tracks`,
-      badgeColor: 'bg-white/10 text-white/90',
     },
     {
       id: 'solution',
       label: 'Submit Solution',
       icon: Send,
-      badge: ideaSubmission ? 'Submitted' : null,
-      badgeColor: 'bg-emerald-400/20 text-emerald-300',
     },
     {
       id: 'prototype',
       label: 'Submit Prototype',
       icon: Code2,
-      badge: prototypeSubmission ? 'Submitted' : null,
-      badgeColor: 'bg-emerald-400/20 text-emerald-300',
     },
     {
       id: 'results',
       label: 'Final Result',
       icon: Trophy,
-      badge: 'Awards',
-      badgeColor: 'bg-amber-400/20 text-amber-300',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+    <div className="min-h-screen md:h-screen md:overflow-hidden bg-background flex flex-col md:flex-row">
       {/* Mobile Top Navbar (Admin format) */}
       <div className="md:hidden bg-primary text-white px-4 py-3 flex items-center justify-between shadow-soft sticky top-0 z-40">
         <div className="flex items-center gap-2.5">
@@ -383,7 +393,7 @@ export default function StudentDashboardPage() {
 
       {/* Sidebar Navigation (Exact Admin Dashboard Format) */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-primary text-white flex flex-col justify-between transition-transform duration-200 ease-in-out md:static md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-primary text-white flex flex-col justify-between transition-transform duration-200 ease-in-out md:sticky md:top-0 md:h-full md:translate-x-0 md:overflow-y-auto shrink-0 shadow-lg ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -419,12 +429,6 @@ export default function StudentDashboardPage() {
             </div>
           )}
 
-          {/* Event Quick Info Banner */}
-          <div className="p-4 mx-4 my-3 bg-white/5 border border-white/10 rounded-xl space-y-1">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-secondary">Active Hackathon</div>
-            <div className="text-xs font-black text-white leading-tight">CIT Coding Carnival 2026</div>
-            <div className="text-[10px] text-white/70">CIT Campus, Abu Road</div>
-          </div>
 
           {/* Nav links */}
           <nav className="p-4 space-y-1.5">
@@ -445,13 +449,7 @@ export default function StudentDashboardPage() {
                     <Icon className={`w-4 h-4 ${active ? 'text-accent' : 'text-secondary'}`} />
                     <span>{item.label}</span>
                   </div>
-                  {item.badge && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                      active ? 'bg-primary text-secondary' : item.badgeColor
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
+                  {active && <ChevronRight className="w-3.5 h-3.5 text-accent" />}
                 </button>
               );
             })}
@@ -459,16 +457,8 @@ export default function StudentDashboardPage() {
         </div>
 
         {/* Bottom User Area */}
-        <div className="p-4 border-t border-white/10 space-y-3">
-          <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/5 text-white/80 text-xs font-medium">
-            <span className="flex items-center gap-1.5 text-[11px] text-emerald-300 font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Session Active</span>
-            </span>
-            <span className="text-[10px] text-secondary font-bold">CIT 2026</span>
-          </div>
-
-          <div className="flex items-center justify-between pt-2">
+        <div className="p-4 border-t border-white/10">
+          <div className="flex items-center justify-between">
             <div className="truncate min-w-0 pr-2">
               <div className="text-xs font-bold text-white truncate">{user?.name || 'Student'}</div>
               <div className="text-[10px] text-secondary truncate">{user?.email}</div>
@@ -493,16 +483,15 @@ export default function StudentDashboardPage() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-8 lg:p-10 max-w-7xl overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-8 lg:p-10 max-w-7xl md:h-full overflow-y-auto">
         {/* Top Header Strip inside Main Content */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-8 border-b border-accent/15 gap-4">
           <div>
-            <div className="text-xs font-bold uppercase tracking-wider text-accent mb-1 flex items-center gap-2">
+            <div className="text-xs font-bold uppercase tracking-wider text-accent mb-1">
               <span>CIT Coding Carnival 2026</span>
-              <span>•</span>
-              <span className="text-emerald-700 font-extrabold">₹99 Refund at Check-in</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+              {activeTab === 'details' && 'CIT Coding Carnival 2026 - Event Overview'}
               {activeTab === 'team' && 'Team Registration & Roster'}
               {activeTab === 'ps' && 'Official Problem Statements'}
               {activeTab === 'solution' && 'Stage 1: Submit Solution Proposal'}
@@ -525,6 +514,217 @@ export default function StudentDashboardPage() {
             )}
           </div>
         </div>
+
+        {/* 0. HACKATHON DETAILS VIEW */}
+        {activeTab === 'details' && (
+          <div className="space-y-8">
+            {/* Banner Overview Card */}
+            <div className="bg-gradient-to-br from-primary via-primary-hover to-dark text-white rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative z-10 space-y-4 max-w-3xl">
+                <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+                  CIT Coding Carnival 2026
+                </h2>
+                <p className="text-white/80 text-xs sm:text-sm leading-relaxed">
+                  Join innovators, coders, and creators across the nation for an intensive 12-hour offline hackathon.
+                  Co-organized by <strong>Hackways</strong> (MSME Certified) in association with <strong>Chartered Institute of Technology (CIT), Abu Road</strong>.
+                </p>
+
+                {/* Quick Info Badges */}
+                <div className="flex flex-wrap gap-2.5 pt-2">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-xs font-semibold text-white">
+                    <MapPin className="w-3.5 h-3.5 text-secondary" />
+                    <span>CIT Campus, Abu Road</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-xs font-semibold text-white">
+                    <Clock className="w-3.5 h-3.5 text-secondary" />
+                    <span>09:00 AM – 08:30 PM (Full Day)</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-xs font-semibold text-white">
+                    <Users className="w-3.5 h-3.5 text-secondary" />
+                    <span>Strictly 4 Students / Team</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-xs font-bold text-emerald-300">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>₹99 Entry (100% Refundable at Check-in)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4 Feature Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-accent/15 shadow-card hover:shadow-md transition-all">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mb-3">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div className="text-xl font-extrabold text-primary">₹25,000+</div>
+                <div className="text-xs font-bold text-dark mt-0.5">Total Cash Prize Pool</div>
+                <div className="text-[11px] text-dark-muted mt-1 leading-snug">
+                  Cash prizes for 1st, 2nd, and 3rd innovation spots directly transferred.
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-accent/15 shadow-card hover:shadow-md transition-all">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div className="text-xl font-extrabold text-emerald-700">₹99 Refundable</div>
+                <div className="text-xs font-bold text-dark mt-0.5">Zero Effective Cost</div>
+                <div className="text-[11px] text-dark-muted mt-1 leading-snug">
+                  Registration fee is 100% refunded in cash/UPI upon physical reporting.
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-accent/15 shadow-card hover:shadow-md transition-all">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div className="text-xl font-extrabold text-primary">4 Members</div>
+                <div className="text-xs font-bold text-dark mt-0.5">Strict Team Structure</div>
+                <div className="text-[11px] text-dark-muted mt-1 leading-snug">
+                  Slots are capped strictly to 70 student teams across all colleges.
+                </div>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-accent/15 shadow-card hover:shadow-md transition-all">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-3">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div className="text-xl font-extrabold text-primary">Govt. Verified</div>
+                <div className="text-xs font-bold text-dark mt-0.5">MSME & CIT Certificates</div>
+                <div className="text-[11px] text-dark-muted mt-1 leading-snug">
+                  Verified digital and hardcopy certificates for every participant.
+                </div>
+              </div>
+            </div>
+
+            {/* Prize Breakdown & Schedule in 2 Columns */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Prize Breakdown */}
+              <div className="bg-white p-6 sm:p-7 rounded-3xl border border-accent/15 shadow-card space-y-4">
+                <div className="border-b border-accent/15 pb-3">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">Rewards & Recognition</div>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-primary mt-0.5">Prize Distribution</h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/60">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 font-black flex items-center justify-center text-sm shadow-xs">
+                        1st
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-dark text-sm">Champion Team</div>
+                        <div className="text-[11px] text-dark-muted">Trophy + Swag Kits + Direct Mentorship</div>
+                      </div>
+                    </div>
+                    <span className="font-extrabold text-amber-900 text-base">₹12,000</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-slate-200 text-slate-800 font-black flex items-center justify-center text-sm shadow-xs">
+                        2nd
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-dark text-sm">Runner-Up Team</div>
+                        <div className="text-[11px] text-dark-muted">Runner-up Trophy + Merit Certificates</div>
+                      </div>
+                    </div>
+                    <span className="font-extrabold text-primary text-base">₹8,000</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-amber-50/40 border border-amber-200/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 font-black flex items-center justify-center text-sm shadow-xs">
+                        3rd
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-dark text-sm">Innovation Pick</div>
+                        <div className="text-[11px] text-dark-muted">Innovation Trophy + Merit Certificates</div>
+                      </div>
+                    </div>
+                    <span className="font-extrabold text-primary text-base">₹5,000</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 text-xs text-dark-muted">
+                  Plus: Lunch, refreshment kits, and mentor feedback provided to all 70 participating teams.
+                </div>
+              </div>
+
+              {/* Day Schedule */}
+              <div className="bg-white p-6 sm:p-7 rounded-3xl border border-accent/15 shadow-card space-y-4">
+                <div className="border-b border-accent/15 pb-3">
+                  <div className="text-xs font-bold uppercase tracking-wider text-accent">Event Timeline</div>
+                  <h3 className="text-lg sm:text-xl font-extrabold text-primary mt-0.5">Hackathon Schedule</h3>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div className="flex items-start gap-3 p-2.5 rounded-xl bg-background-cream/60">
+                    <span className="font-mono font-bold text-accent shrink-0 w-16">09:00 AM</span>
+                    <span className="text-dark font-medium">Reporting, Desk Check-in & ₹99 Cash/UPI Refund</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-2.5 rounded-xl bg-background-cream/60">
+                    <span className="font-mono font-bold text-accent shrink-0 w-16">09:45 AM</span>
+                    <span className="text-dark font-medium">Opening Ceremony & Problem Statement Briefing</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-2.5 rounded-xl bg-background-cream/60">
+                    <span className="font-mono font-bold text-accent shrink-0 w-16">10:15 AM</span>
+                    <span className="text-dark font-medium">Hackathon Hacking Starts • Coding & Building</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-2.5 rounded-xl bg-background-cream/60">
+                    <span className="font-mono font-bold text-accent shrink-0 w-16">01:30 PM</span>
+                    <span className="text-dark font-medium">Lunch & Refreshments Break</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-2.5 rounded-xl bg-background-cream/60">
+                    <span className="font-mono font-bold text-accent shrink-0 w-16">03:30 PM</span>
+                    <span className="text-dark font-medium">Mentor Check-ins & Technical Evaluation</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-2.5 rounded-xl bg-background-cream/60">
+                    <span className="font-mono font-bold text-accent shrink-0 w-16">06:00 PM</span>
+                    <span className="text-dark font-medium">Final Code & Prototype Freeze</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-2.5 rounded-xl bg-background-cream/60">
+                    <span className="font-mono font-bold text-accent shrink-0 w-16">06:30 PM</span>
+                    <span className="text-dark font-medium">Live Pitching to Jury & Final Demonstration</span>
+                  </div>
+                  <div className="flex items-start gap-3 p-2.5 rounded-xl bg-background-cream/60">
+                    <span className="font-mono font-bold text-accent shrink-0 w-16">08:00 PM</span>
+                    <span className="text-dark font-medium">Awards Ceremony & Certificate Handover</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+            {/* IN THE END: DIRECT CALL TO ACTION TO REGISTER TEAM */}
+            <div className="bg-gradient-to-r from-primary to-dark text-white p-8 sm:p-10 rounded-3xl shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-6 border border-accent/20">
+              <div className="space-y-2 max-w-xl">
+                <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                  Ready to Register Your 4-Member Squad?
+                </h3>
+                <p className="text-white/80 text-xs sm:text-sm leading-relaxed">
+                  Only 70 team slots are available. Enter your team details now to guarantee your spot at CIT Campus!
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('team');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="btn-secondary py-4 px-8 rounded-2xl font-extrabold text-sm sm:text-base inline-flex items-center justify-center gap-2.5 shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+              >
+                <Users className="w-5 h-5 text-accent" />
+                <span>Register Your Team</span>
+                <ArrowRight className="w-5 h-5 text-accent" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 1. TEAM REGISTRATION VIEW */}
         {activeTab === 'team' && (
